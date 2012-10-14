@@ -1,0 +1,49 @@
+<html>
+<head>
+<title>Canvas test</title>
+
+<script>
+function doAdd()
+{
+var url;
+var xmlhttp;
+var txt;
+n1=parseInt(document.f1.num1.value)
+n2=parseInt(document.f1.num2.value)
+
+if (!(n1 && n2)){document.f1.result.value="input error"
+return null}
+if (window.XMLHttpRequest)
+  {// code for IE7+, Firefox, Chrome, Opera, Safari
+  xmlhttp=new XMLHttpRequest();
+  }
+else
+  {// code for IE6, IE5
+  xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+  }
+xmlhttp.onreadystatechange=function()
+  {
+  if (xmlhttp.readyState==4) 
+    { 
+    if (xmlhttp.status==200){
+        txt="<table border='1'><tr><th>Title</th><th>Artist</th></tr>";
+        txt=xmlhttp.responseText;
+        document.f1.result.value=txt;}
+	else document.f1.result.value="error";
+    }
+  }
+url="/rpc?action=Add&arg1="+n1+"&arg2="+n2
+xmlhttp.open("GET",url,true);
+xmlhttp.send();
+}
+</script>
+</head>
+
+<body>
+<form name="f1">
+Number 1: <input name="num1" type="text" value="1" /><br />
+Number 2: <input name="num2" type="text" value="1" /><br />
+<input type="button" value="Add" onclick="doAdd()" style="width:100%" /><br />
+Result: <input name="result" type="text" value="" readonly="true" disabled="true" />
+</body>
+</html>

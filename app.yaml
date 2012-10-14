@@ -1,0 +1,22 @@
+application: ajax2
+version: 0
+runtime: python27
+api_version: 1
+threadsafe: true
+
+handlers:
+- url: /favicon\.ico
+  static_files: favicon.ico
+  upload: favicon\.ico
+
+#- url: /page2
+#  static_files: canvas.html
+#  upload: /page2
+  
+- url: /.*
+  script: main.app
+
+#libraries:
+#- name: django
+#  version: "1.2"
+  
