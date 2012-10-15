@@ -1,6 +1,40 @@
 <!DOCTYPE html>
 <html>
 <head>
+
+<style type="text/css">
+table.main
+{
+}
+.main td
+{
+margin: 0;
+padding: 0;
+}
+
+table.sub
+{
+border-width: 0 0 2px 2px;
+border-spacing: 0;
+border-color: black;
+border-style: solid;
+}
+.sub td
+{
+width: 20px;
+height: 20px;
+border-width: 2px 2px 0 0;
+border-style: solid;
+border-color: black;
+}
+
+p.in-cell
+{
+text-align: center;
+margin: 0 0 0 0;
+}
+</style>
+
 <title>Canvas test</title>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.2.6/jquery.min.js"/>
 
@@ -28,7 +62,6 @@ else
 	  if (xmlhttp.readyState==4) 
 		{ 
 		if (xmlhttp.status==200){
-			txt="<table border='1'><tr><th>Title</th><th>Artist</th></tr>";
 			txt=xmlhttp.responseText;
 			document.f1.result.value=txt;}
 		else document.f1.result.value="error";
@@ -43,18 +76,17 @@ function clickcell
 </head>
 
 <body>
-<script language="JavaScript">
-document.write("<table>");
+<script>
+document.write("<table class='main'>");
 for(z=0;z<4;z++)
   {
-  document.write("<tr><td><table border=1 bordercolor=green>");
+  document.write("<tr><td><table class='sub'>");
   for(y=0;y<4;y++)
     {
 	document.write("<tr>");
 	for(x=0;x<4;x++)
 	  {
-	  
-	  document.write("<td onclick=\"alert('"+x+y+z+"')\">O</td>");
+	  document.write("<td onclick=\"alert('"+x+y+z+"')\"><p class=in-cell>O</p></td>");
 	  }
 	document.write("</tr>");
     }
