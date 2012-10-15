@@ -5,7 +5,6 @@ import os
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp import template
 from google.appengine.ext.webapp import util
-#from django.utils import simplejson
 
 class MainPage(webapp.RequestHandler):
     """ Renders the main template."""
@@ -25,13 +24,11 @@ class RPCHandler(webapp.RequestHandler):
             try:
                 num1 = int(self.request.get('arg1'))
                 num2 = int(self.request.get('arg2'))
-            except:
+            except ValueError:
                 self.error(400)#invalid input
                 return
             self.response.out.write(str(num1+num2))
-            return
-        
-        self.error(403) # access denied
+        else: self.error(403) # access denied
 
 
   

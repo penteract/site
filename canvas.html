@@ -1,6 +1,8 @@
+<!DOCTYPE html>
 <html>
 <head>
 <title>Canvas test</title>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.2.6/jquery.min.js"/>
 
 <script>
 function doAdd()
@@ -21,29 +23,53 @@ else
   {// code for IE6, IE5
   xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
   }
-xmlhttp.onreadystatechange=function()
-  {
-  if (xmlhttp.readyState==4) 
-    { 
-    if (xmlhttp.status==200){
-        txt="<table border='1'><tr><th>Title</th><th>Artist</th></tr>";
-        txt=xmlhttp.responseText;
-        document.f1.result.value=txt;}
-	else document.f1.result.value="error";
-    }
-  }
+ xmlhttp.onreadystatechange=function()
+	  {
+	  if (xmlhttp.readyState==4) 
+		{ 
+		if (xmlhttp.status==200){
+			txt="<table border='1'><tr><th>Title</th><th>Artist</th></tr>";
+			txt=xmlhttp.responseText;
+			document.f1.result.value=txt;}
+		else document.f1.result.value="error";
+		}
+	  }
 url="/rpc?action=Add&arg1="+n1+"&arg2="+n2
 xmlhttp.open("GET",url,true);
 xmlhttp.send();
 }
+function clickcell
 </script>
 </head>
 
 <body>
+<script language="JavaScript">
+document.write("<table>");
+for(z=0;z<4;z++)
+  {
+  document.write("<tr><td><table border=1 bordercolor=green>");
+  for(y=0;y<4;y++)
+    {
+	document.write("<tr>");
+	for(x=0;x<4;x++)
+	  {
+	  
+	  document.write("<td onclick=\"alert('"+x+y+z+"')\">O</td>");
+	  }
+	document.write("</tr>");
+    }
+  document.write("</table></td></tr>");
+  }
+document.write("</table>");
+</script>
+
+<!--
 <form name="f1">
 Number 1: <input name="num1" type="text" value="1" /><br />
 Number 2: <input name="num2" type="text" value="1" /><br />
 <input type="button" value="Add" onclick="doAdd()" style="width:100%" /><br />
 Result: <input name="result" type="text" value="" readonly="true" disabled="true" />
+</form>
+-->
 </body>
 </html>
