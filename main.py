@@ -5,6 +5,7 @@ import os
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp import template
 from google.appengine.ext.webapp import util
+from django import simplejson
 
 class MainPage(webapp.RequestHandler):
     """ Renders the main template."""
@@ -34,6 +35,7 @@ class RPCHandler(webapp.RequestHandler):
   
 app = webapp.WSGIApplication([
     ('/', MainPage),
-    ('/rpc', RPCHandler),
+    ('/post', RPCHandler),
+    #('/get', RPCHandler),
      ], debug=True)
         

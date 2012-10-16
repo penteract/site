@@ -6,7 +6,7 @@
 table.main
 {
 }
-.main td
+.main>tr>td
 {
 margin: 0;
 padding: 0;
@@ -36,72 +36,37 @@ margin: 0 0 0 0;
 </style>
 
 <title>Canvas test</title>
-<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.2.6/jquery.min.js"/>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.0/jquery.min.js" /></script>
 
 <script>
-function doAdd()
-{
-var url;
-var xmlhttp;
-var txt;
-n1=parseInt(document.f1.num1.value)
-n2=parseInt(document.f1.num2.value)
+var waiting=false
+$(document).ready(function(){
 
-if (!(n1 && n2)){document.f1.result.value="input error"
-return null}
-if (window.XMLHttpRequest)
-  {// code for IE7+, Firefox, Chrome, Opera, Safari
-  xmlhttp=new XMLHttpRequest();
-  }
-else
-  {// code for IE6, IE5
-  xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
-  }
- xmlhttp.onreadystatechange=function()
-	  {
-	  if (xmlhttp.readyState==4) 
-		{ 
-		if (xmlhttp.status==200){
-			txt=xmlhttp.responseText;
-			document.f1.result.value=txt;}
-		else document.f1.result.value="error";
-		}
-	  }
-url="/rpc?action=Add&arg1="+n1+"&arg2="+n2
-xmlhttp.open("GET",url,true);
-xmlhttp.send();
-}
-function clickcell
-</script>
-</head>
-
-<body>
-<script>
-document.write("<table class='main'>");
+s="<table class='main'>";
 for(z=0;z<4;z++)
   {
-  document.write("<tr><td><table class='sub'>");
+  s+="<tr><td><table class='sub'>";
   for(y=0;y<4;y++)
     {
-	document.write("<tr>");
-	for(x=0;x<4;x++)
-	  {
-	  document.write("<td onclick=\"alert('"+x+y+z+"')\"><p class=in-cell>O</p></td>");
-	  }
-	document.write("</tr>");
+    s+="<tr>";
+    for(x=0;x<4;x++)
+      {
+      s+="<td id='t"+x+y+z+"'><p id='p"+x+y+z+"' class=in-cell></p></td>";
+      }
+    s+="</tr>";
     }
-  document.write("</table></td></tr>");
+  s+="</table></td></tr>";
   }
-document.write("</table>");
-</script>
+s+="</table>";
+$("body").append(s);
 
-<!--
-<form name="f1">
-Number 1: <input name="num1" type="text" value="1" /><br />
-Number 2: <input name="num2" type="text" value="1" /><br />
-<input type="button" value="Add" onclick="doAdd()" style="width:100%" /><br />
-Result: <input name="result" type="text" value="" readonly="true" disabled="true" />
-</form>
--->
+$(".sub td").click(function(){
+  $.post('post', {place:$(this).attr("id")});
+});
+  
+});
+</script>
+</head>
+<body>
 </body>
 </html>

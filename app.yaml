@@ -12,11 +12,15 @@ handlers:
 #- url: /page2
 #  static_files: canvas.html
 #  upload: /page2
+
+- url: /tst\.json
+  static_files: tst.json
+  upload: /tst\.json
   
 - url: /.*
   script: main.app
 
-#libraries:
-#- name: django
-#  version: "1.2"
+libraries:
+- name: django
+  version: "1.2"
   
