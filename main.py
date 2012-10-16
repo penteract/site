@@ -5,7 +5,7 @@ import os
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp import template
 from google.appengine.ext.webapp import util
-from django import simplejson
+#from django import simplejson
 
 class MainPage(webapp.RequestHandler):
     """ Renders the main template."""
