@@ -1,5 +1,5 @@
-application: ajax2
-version: 0
+application: tstappo
+version: tst
 runtime: python27
 api_version: 1
 threadsafe: true
@@ -9,9 +9,9 @@ handlers:
   static_files: favicon.ico
   upload: favicon\.ico
 
-#- url: /page2
-#  static_files: canvas.html
-#  upload: /page2
+- url: /page2
+  static_files: canvas.html
+  upload: /page2
 
 - url: /tst\.json
   static_files: tst.json

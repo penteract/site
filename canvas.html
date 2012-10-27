@@ -36,12 +36,24 @@ margin: 0 0 0 0;
 </style>
 
 <title>Canvas test</title>
-<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.0/jquery.min.js" /></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
 
 <script>
-var waiting=false
-$(document).ready(function(){
+function url(root,parameters){
+  root+='?time='+new Date().getTime()
+  for (var key in parameters){
+    root+='&'+key+'='+parameters[key];
+    }
+  return root;
+  }
+  
 
+var gameID
+var timer
+$.ajaxSetup({cache:false});
+
+$(document).ready(function(){
+//set up the board display
 s="<table class='main'>";
 for(z=0;z<4;z++)
   {
@@ -61,12 +73,42 @@ s+="</table>";
 $("body").append(s);
 
 $(".sub td").click(function(){
-  $.post('post', {place:$(this).attr("id")});
-});
+  player=$("#player").val()
+  if (player=="X" || player=="O"){
+    $.post('post?pos='+$(this).attr("id").substr(1)+'&gameID='+gameID+'&player='+player)
+    }
+  });
+
+//give the game an id
+$.get('start', success=function(data){
+  gameID=data;
+  });
+
   
+//poll the server regularly
+timer=setInterval(function(){
+  player=$("#player").val()
+  if (player=="X" || player=="O"){
+    $.getJSON('get',{'gameID':gameID,'player':player}, success=function(data){
+      for(z=0;z<4;z++){
+        for(y=0;y<4;y++){
+          for(x=0;x<4;x++){
+            $("#p"+x+y+z).text(data.board[z*16+y*4+x]);
+            }
+          }
+        }
+      });
+    }
+  }, 5000);
+
 });
+
+function st(){clearInterval(timer);}
 </script>
 </head>
 <body>
+<input type="text" id="player" value="X">
+<input type="button" onclick="$.post('clr',{'gameID':gameID});">
+
 </body>
 </html>
