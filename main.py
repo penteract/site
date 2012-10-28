@@ -4,10 +4,13 @@ import os
 import datetime
 
 from google.appengine.ext import webapp
-from google.appengine.ext.webapp import template
 from google.appengine.ext.webapp import util
 from django.utils import simplejson
 from google.appengine.ext import db
+import jinja2
+
+jinja_environment = jinja2.Environment(
+    loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
 
 class show(Exception):
     def __init__(self,s):
@@ -27,9 +30,13 @@ def game_key(gameNum):
 class MainPage(webapp.RequestHandler):
     """ Renders the main template."""
     def get(self):
-        template_values = { 'title':'AJAX Add (via GET)', }
-        path = os.path.join(os.path.dirname(__file__), "canvas.html")
-        self.response.out.write(template.render(path, template_values))
+        gmNum=self.request.get('gameID')
+        if gmNum=="":
+            gmNum="5"
+        template_values = {'gameID':gmNum}
+        
+        template = jinja_environment.get_template('canvas.html')
+        self.response.out.write(template.render(template_values))
 
 class AjaxHandler(webapp.RequestHandler):
     """handles turns sent and polls for new data"""
@@ -49,26 +56,6 @@ class AjaxHandler(webapp.RequestHandler):
         pos=16*z+4*y+x
         gm.board=gm.board[:pos]+player+gm.board[pos+1:]
         gm.put()
-
-class Start(webapp.RequestHandler):
-    """tells the player their id, wont be neccasary later"""
-    
-    def get(self):
-        gmNum=self.request.get('gameID')
-        if gmNum=="":
-            gmNum="5"
-        #raise show(gmNum)
-        gameID = game_key(gmNum)
-        gm=GameData.get(gameID)
-        #if someone else creates a game with the same key at this point it will be overwritten, but that shouldn't matter because they would both be identical
-        if gm==None:
-            gm=GameData(key_name=gmNum)
-            gm.turn="X"
-            gm.board=" "*64
-            gm.winner=""
-            gm.put()
-        
-        self.response.out.write(gmNum)
         
 class NewGame(webapp.RequestHandler):
     """ produces an id for a new game"""
@@ -128,7 +115,6 @@ class Game():
 app = webapp.WSGIApplication([
     ('/post', AjaxHandler),
     ('/get', AjaxHandler),
-    ('/start', Start),
     ('/clr', NewGame),
     #('/clrall', Clear),
     ('/', MainPage),
