@@ -79,6 +79,11 @@ class NewGame(webapp.RequestHandler):
         gm.board=" "*64
         gm.winner=""
         gm.put()
+        
+class Clear(webapp.RequestHandler):
+    """clear all game data"""
+    def get(self):
+        db.delete(Game.all(keys_only=True).run())
 
 class Game():
     def __init__(self,gmData):
@@ -125,6 +130,7 @@ app = webapp.WSGIApplication([
     ('/get', AjaxHandler),
     ('/start', Start),
     ('/clr', NewGame),
+    #('/clrall', Clear),
     ('/', MainPage),
      ], debug=True)
         
