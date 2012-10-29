@@ -75,10 +75,11 @@ $("body").append(s);
 $(".sub td").click(function(){
   player=$("#player").val()
   if (player=="X" || player=="O"){
-    $.post('post?pos='+$(this).attr("id").substr(1)+'&gameID='+gameID+'&player='+player)
+    $.post('post?pos='+$(this).attr("id").substr(1)+'&gameID='+gameID+'&player='+player,
+    function(data){$("#error").val(data.error)},'json')
     }
   });
-
+$("#error").val("none")
 //give the game an id
 gameID={{gameID}}
 
@@ -105,8 +106,9 @@ function st(){clearInterval(timer);}
 </script>
 </head>
 <body>
-<input type="text" id="player" value="X">
-<input type="button" onclick="$.post('clr',{'gameID':gameID});">
+<input type="text" id="player" value="X"></input>
+<input type="button" onclick="$.post('clr',{'gameID':gameID});"></input>
+<input type="text" id="error" value="" disabled="disabled"></input>
 
 </body>
 </html>

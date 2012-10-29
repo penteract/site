@@ -18,6 +18,18 @@ class show(Exception):
     def __str__(self):
         return repr(self.s)
 
+class InvalidInput(Exception):
+    def __init__(self,input,excpected,msg):
+        self.input=input
+        self.excpected=excpected
+        self.msg=msg
+    def __str__(self):
+        return "excpected: "+self.excpected+"\nbut recieved"+repr(self.input)
+        
+def check(a,b,msg):
+    """raises an error if inputs are not equal"""
+    if a!=b:raise InvalidInput(a,b,msg)
+
 class GameData(db.Model):
     turn=db.StringProperty()#"O" or "X"
     winner=db.StringProperty()#"","O" or "X"
@@ -33,6 +45,15 @@ class MainPage(webapp.RequestHandler):
         gmNum=self.request.get('gameID')
         if gmNum=="":
             gmNum="5"
+        gameID = game_key(gmNum)
+        gm=GameData.get(gameID)
+        #if someone else creates a game with the same key at this point it will be overwritten, but that shouldn't matter because they would both be identical
+        if gm==None:
+            gm=GameData(key_name=gmNum)
+            gm.turn="X"
+            gm.board=" "*64
+            gm.winner=""
+            gm.put()
         template_values = {'gameID':gmNum}
         
         template = jinja_environment.get_template('canvas.html')
@@ -54,8 +75,14 @@ class AjaxHandler(webapp.RequestHandler):
         gm=GameData.get(gameID)
         game=Game(gm)
         pos=16*z+4*y+x
-        gm.board=gm.board[:pos]+player+gm.board[pos+1:]
+        try: game.go(player,x,y,z)
+        except InvalidInput as e:
+            self.response.out.write(simplejson.dumps({"error":e.msg}))
+            return None
+        game.sync(gm)
         gm.put()
+        data={"error":"none"}
+        self.response.out.write(simplejson.dumps(data))
         
 class NewGame(webapp.RequestHandler):
     """ produces an id for a new game"""
@@ -79,10 +106,27 @@ class Game():
         for z in range(4):
             l.append([])
             for y in range(4):
-                l[-1].append(bd[z*16+y*4:z*16+y*4+4])
+                l[-1].append([])
+                for x in range(4):
+                    l[-1][-1].append(bd[z*16+y*4+x])
         self.board=l
         self.turn=gmData.turn
         self.won=not not gmData.winner
+        
+    def getBoard(self):
+        #raise show("".join(["".join(["".join(y) for y in z]) for z in self.board]))
+        return "".join(["".join(["".join(y) for y in z]) for z in self.board])
+        
+    def go(self,player,x,y,z):
+        check(self.won,False,"game's over")
+        check(player,self.turn,"it is not your turn")
+        check(self.board[z][y][x]," ","you must go in an empty cell")
+        self.board[z][y][x]=player
+        self.turn={"X":"O","O":"X"}[self.turn]
+        
+    def sync(self,gameData):
+        gameData.board=self.getBoard()
+        gameData.turn=self.turn
         
     def linesThrough(self,x,y,z):
         bd=self.board
