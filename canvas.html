@@ -39,38 +39,11 @@ margin: 0 0 0 0;
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
 
 <script>
-function url(root,parameters){
-  root+='?time='+new Date().getTime()
-  for (var key in parameters){
-    root+='&'+key+'='+parameters[key];
-    }
-  return root;
-  }
-  
-
 var gameID
 var timer
 $.ajaxSetup({cache:false});
 
 $(document).ready(function(){
-//set up the board display
-s="<table class='main'>";
-for(z=0;z<4;z++)
-  {
-  s+="<tr><td><table class='sub'>";
-  for(y=0;y<4;y++)
-    {
-    s+="<tr>";
-    for(x=0;x<4;x++)
-      {
-      s+="<td id='t"+x+y+z+"'><p id='p"+x+y+z+"' class=in-cell></p></td>";
-      }
-    s+="</tr>";
-    }
-  s+="</table></td></tr>";
-  }
-s+="</table>";
-$("body").append(s);
 
 $(".sub td").click(function(){
   player=$("#player").val()
@@ -109,6 +82,18 @@ function st(){clearInterval(timer);}
 <input type="text" id="player" value="X"></input>
 <input type="button" onclick="$.post('clr',{'gameID':gameID});"></input>
 <input type="text" id="error" value="" disabled="disabled"></input>
-
+<table class='main'>
+{% for z in range(4) %}
+  <tr><td><table class='sub'>
+  {% for y in range(4) %}
+    <tr>
+    {% for x in range(4) %}
+      <td id={{ "t"~x~y~z }}><p id={{ "p"~x~y~z }} class=in-cell></p></td>
+    {% endfor %}
+    </tr>
+  {% endfor %}
+  </table></td></tr>
+{% endfor %}
+</table>
 </body>
 </html>
