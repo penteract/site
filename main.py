@@ -32,7 +32,7 @@ def check(a,b,msg):
 
 class GameData(db.Model):
     turn=db.StringProperty()#"O" or "X"
-    winner=db.StringProperty()#"","O" or "X"
+    wonlines=db.StringProperty()#"" or "xyz"
     board=db.StringProperty()#" ","O" or "X" 64 times
   
 def game_key(gameNum):
@@ -52,8 +52,9 @@ class MainPage(webapp.RequestHandler):
             gm=GameData(key_name=gmNum)
             gm.turn="X"
             gm.board=" "*64
-            gm.winner=""
+            gm.wonlines=""
             gm.put()
+        #doesn't always show the board, may be a problem with caching
         template_values = {'gameID':gmNum,"board":gm.board}
         
         template = jinja_environment.get_template('canvas.html')
@@ -65,7 +66,7 @@ class AjaxHandler(webapp.RequestHandler):
         #lastUpdate = self.request.get('lastUpdate')
         gameID = game_key(self.request.get('gameID'))
         gm=GameData.get(gameID)
-        self.response.out.write(simplejson.dumps({"board":gm.board}))
+        self.response.out.write(simplejson.dumps({"board":gm.board,"wonlines":[]}))
 
     def post(self):
         pos = self.request.get('pos')
@@ -91,13 +92,13 @@ class NewGame(webapp.RequestHandler):
         gm=GameData(key=gameID)
         gm.turn="X"
         gm.board=" "*64
-        gm.winner=""
+        gm.wonlines=""
         gm.put()
         
 class Clear(webapp.RequestHandler):
     """clear all game data"""
     def get(self):
-        db.delete(Game.all(keys_only=True).run())
+        db.delete(GameData.all(keys_only=True).run())
 
 class Game():
     def __init__(self,gmData):
@@ -111,7 +112,8 @@ class Game():
                     l[-1][-1].append(bd[z*16+y*4+x])
         self.board=l
         self.turn=gmData.turn
-        self.won=not not gmData.winner
+        self.won=not not gmData.wonlines
+        self.wonlines=""
         
     def getBoard(self):
         #raise show("".join(["".join(["".join(y) for y in z]) for z in self.board]))
@@ -123,6 +125,7 @@ class Game():
         check(self.board[z][y][x]," ","you must go in an empty cell")
         self.board[z][y][x]=player
         self.turn={"X":"O","O":"X"}[self.turn]
+        
         
     def sync(self,gameData):
         gameData.board=self.getBoard()
