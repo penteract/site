@@ -88,7 +88,7 @@ function st(){clearInterval(timer);}
   {% for y in range(4) %}
     <tr>
     {% for x in range(4) %}
-      <td id={{ "t"~x~y~z }}><p id={{ "p"~x~y~z }} class=in-cell></p></td>
+      <td id={{ "t"~x~y~z }}><p id={{ "p"~x~y~z }} class=in-cell>{{board[z*16+y*4+x]}}</p></td>
     {% endfor %}
     </tr>
   {% endfor %}

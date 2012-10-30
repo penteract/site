@@ -54,7 +54,7 @@ class MainPage(webapp.RequestHandler):
             gm.board=" "*64
             gm.winner=""
             gm.put()
-        template_values = {'gameID':gmNum}
+        template_values = {'gameID':gmNum,"board":gm.board}
         
         template = jinja_environment.get_template('canvas.html')
         self.response.out.write(template.render(template_values))
