@@ -32,7 +32,7 @@ def check(a,b,msg):
 
 class GameData(db.Model):
     turn=db.StringProperty()#"O" or "X"
-    wonlines=db.StringProperty()#"" or "xyz"
+    winpos=db.StringProperty()#"" or "xyz"
     board=db.StringProperty()#" ","O" or "X" 64 times
   
 def game_key(gameNum):
@@ -52,7 +52,7 @@ class MainPage(webapp.RequestHandler):
             gm=GameData(key_name=gmNum)
             gm.turn="X"
             gm.board=" "*64
-            gm.wonlines=""
+            gm.winpos=""
             gm.put()
         #doesn't always show the board, may be a problem with caching
         template_values = {'gameID':gmNum,"board":gm.board}
@@ -63,10 +63,10 @@ class MainPage(webapp.RequestHandler):
 class AjaxHandler(webapp.RequestHandler):
     """handles turns sent and polls for new data"""
     def get(self):
-        #lastUpdate = self.request.get('lastUpdate')
         gameID = game_key(self.request.get('gameID'))
         gm=GameData.get(gameID)
-        self.response.out.write(simplejson.dumps({"board":gm.board,"wonlines":[]}))
+        game=Game(gm)
+        self.response.out.write(simplejson.dumps(game.getData()))
 
     def post(self):
         pos = self.request.get('pos')
@@ -92,7 +92,7 @@ class NewGame(webapp.RequestHandler):
         gm=GameData(key=gameID)
         gm.turn="X"
         gm.board=" "*64
-        gm.wonlines=""
+        gm.winpos=""
         gm.put()
         
 class Clear(webapp.RequestHandler):
@@ -112,51 +112,74 @@ class Game():
                     l[-1][-1].append(bd[z*16+y*4+x])
         self.board=l
         self.turn=gmData.turn
-        self.won=not not gmData.wonlines
-        self.wonlines=""
+        self.winpos=gmData.winpos
+        self.wonlines=[]
+        if gmData.winpos:
+            x,y,z=(int(n) for n in self.winpos)
+            c=self.board[z][y][x]
+            for line in self.linesThrough(x,y,z):
+                if all([p==c for p in line[0]]):
+                    self.wonlines.append(line[1])
         
-    def getBoard(self):
-        #raise show("".join(["".join(["".join(y) for y in z]) for z in self.board]))
-        return "".join(["".join(["".join(y) for y in z]) for z in self.board])
+            
+        
+    def getData(self):
+        d={}
+        d["board"]="".join(["".join(["".join(y) for y in z]) for z in self.board])
+        d["wonlines"]=self.wonlines
+        return d
         
     def go(self,player,x,y,z):
-        check(self.won,False,"game's over")
+        check(self.wonlines,[],"game's over")
         check(player,self.turn,"it is not your turn")
         check(self.board[z][y][x]," ","you must go in an empty cell")
         self.board[z][y][x]=player
+        for line in self.linesThrough(x,y,z):
+            if all([p==player for p in line[0]]):
+                self.wonlines.append(line[1])
+        if self.wonlines: self.winpos=str(x)+str(y)+str(z)
         self.turn={"X":"O","O":"X"}[self.turn]
         
         
     def sync(self,gameData):
-        gameData.board=self.getBoard()
+        gameData.board=self.getData()["board"]
         gameData.turn=self.turn
-        
+        gameData.winpos=self.winpos
+    
     def linesThrough(self,x,y,z):
+        """returns a list of the lines through a point in the form [(["X","O","O","O"],[[0,2,3],[1,2,3],[2,2,3],[3,2,3]]),(["O"...],[...]),...]"""
         bd=self.board
-        lines=[[],[],[]]
+        lines=[([],[]),([],[]),([],[])]
         for n in range(4):
-            lines[0].append(bd[n][y][z])
-            lines[1].append(bd[x][n][z])
-            lines[2].append(bd[x][y][n])
+            lines[0][0].append(bd[n][y][x])
+            lines[1][0].append(bd[z][n][x])
+            lines[2][0].append(bd[z][y][n])
+            lines[0][1].append([n,y,x])
+            lines[1][1].append([z,n,x])
+            lines[2][1].append([z,y,n])
         xp=abs(x-1.5)
         yp=abs(y-1.5)
         zp=abs(z-1.5)
-        if xp==yp:
-            lines.append([])
+        if zp==yp:
+            lines.append(([],[]))
             for n in range(4):
-                lines[-1].append(bd[n][n if y==x else 3-n][z])
-        if xp==zp:
-            lines.append([])
+                lines[-1][0].append(bd[n][n if y==z else 3-n][x])
+                lines[-1][1].append([n,n if y==z else 3-n,x])
+        if zp==xp:
+            lines.append(([],[]))
             for n in range(4):
-                lines[-1].append(bd[n][y][n if z==x else 3-n])
-        if yp==zp:
-            lines.append([])
+                lines[-1][0].append(bd[n][y][n if x==z else 3-n])
+                lines[-1][1].append([n,y,n if x==z else 3-n])
+        if yp==xp:
+            lines.append(([],[]))
             for n in range(4):
-                lines[-1].append(bd[x][n][n if y==z else 3-n])
-        if xp==yp and xp==zp:
-            lines.append([])
+                lines[-1][0].append(bd[z][n][n if y==x else 3-n])
+                lines[-1][1].append([z,n,n if y==x else 3-n])
+        if zp==yp and zp==xp:
+            lines.append(([],[]))
             for n in range(4):
-                lines[-1].append(bd[n][n if y==x else 3-n][n if x==z else 3-n])
+                lines[-1][0].append(bd[n][n if y==z else 3-n][n if z==x else 3-n])
+                lines[-1][1].append([n,n if y==z else 3-n,n if z==x else 3-n])
         return lines
 
 app = webapp.WSGIApplication([
