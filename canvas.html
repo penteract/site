@@ -33,6 +33,11 @@ p.in-cell
 text-align: center;
 margin: 0 0 0 0;
 }
+
+td.won
+{
+background-color: red;
+}
 </style>
 
 <title>Canvas test</title>
@@ -66,9 +71,14 @@ timer=setInterval(function(){
         for(y=0;y<4;y++){
           for(x=0;x<4;x++){
             $("#p"+x+y+z).text(data.board[z*16+y*4+x]);
+            $("#t"+x+y+z).removeClass("won");
             }
           }
         }
+      for (i in data.wonlines){
+        line=data.wonlines[i]
+        for(j=0;j<4;j++){
+          $("#t"+line[j][0]+line[j][1]+line[j][2]).addClass("won");}}
       });
     }
   }, 5000);
@@ -88,7 +98,7 @@ function st(){clearInterval(timer);}
   {% for y in range(4) %}
     <tr>
     {% for x in range(4) %}
-      <td id={{ "t"~x~y~z }}><p id={{ "p"~x~y~z }} class=in-cell>{{board[z*16+y*4+x]}}</p></td>
+      <td id={{ "t"~x~y~z }} class=won ><p id={{ "p"~x~y~z }} class=in-cell>{{board[z*16+y*4+x]}}</p></td>
     {% endfor %}
     </tr>
   {% endfor %}

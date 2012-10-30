@@ -154,9 +154,9 @@ class Game():
             lines[0][0].append(bd[n][y][x])
             lines[1][0].append(bd[z][n][x])
             lines[2][0].append(bd[z][y][n])
-            lines[0][1].append([n,y,x])
-            lines[1][1].append([z,n,x])
-            lines[2][1].append([z,y,n])
+            lines[0][1].append([x,y,n])
+            lines[1][1].append([x,n,z])
+            lines[2][1].append([n,y,z])
         xp=abs(x-1.5)
         yp=abs(y-1.5)
         zp=abs(z-1.5)
@@ -164,22 +164,22 @@ class Game():
             lines.append(([],[]))
             for n in range(4):
                 lines[-1][0].append(bd[n][n if y==z else 3-n][x])
-                lines[-1][1].append([n,n if y==z else 3-n,x])
+                lines[-1][1].append([x,n if y==z else 3-n,n])
         if zp==xp:
             lines.append(([],[]))
             for n in range(4):
                 lines[-1][0].append(bd[n][y][n if x==z else 3-n])
-                lines[-1][1].append([n,y,n if x==z else 3-n])
+                lines[-1][1].append([n if x==z else 3-n,y,n])
         if yp==xp:
             lines.append(([],[]))
             for n in range(4):
                 lines[-1][0].append(bd[z][n][n if y==x else 3-n])
-                lines[-1][1].append([z,n,n if y==x else 3-n])
+                lines[-1][1].append([n if y==x else 3-n,n,z])
         if zp==yp and zp==xp:
             lines.append(([],[]))
             for n in range(4):
                 lines[-1][0].append(bd[n][n if y==z else 3-n][n if z==x else 3-n])
-                lines[-1][1].append([n,n if y==z else 3-n,n if z==x else 3-n])
+                lines[-1][1].append([n if z==x else 3-n,n if y==z else 3-n,n])
         return lines
 
 app = webapp.WSGIApplication([
