@@ -55,12 +55,12 @@ class MainPage(webapp.RequestHandler):
             gm.winpos=""
             gm.put()
         #doesn't always show the board, may be a problem with caching
-        template_values = {'gameID':"'"+gmNum+"'","board":gm.board}
+        template_values = {'gameID':gmNum,"board":gm.board}
         
         pageType=self.request.get('pageType')
-        if pageType=="":
+        if pageType=="table":
             template = jinja_environment.get_template('tablegame.html')
-        if pageType=="canvas":
+        if pageType=="" or pageType=="canvas":
             template = jinja_environment.get_template('canvasgame.html')
         self.response.out.write(template.render(template_values))
 

@@ -40,7 +40,7 @@ background-color: red;
 }
 </style>
 
-<title>Canvas test</title>
+<title>3DOX</title>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
 
 <script>
@@ -104,22 +104,42 @@ function st(){clearInterval(timer);}
 </script>
 </head>
 <body>
-<input type="text" id="player" value="X"></input>
-<input type="button" onclick="$.post('clr',{'gameID':gameID});"></input>
-<input type="text" id="error" value="" disabled="disabled"></input>
-<table class='main'>
-{% for z in range(4) %}
-  <tr><td><table class='sub'>
-  {% for y in range(4) %}
-    <tr>
-    {% for x in range(4) %}
-      <td id={{ "t"~x~y~z }} class=won ><p id={{ "p"~x~y~z }} class=in-cell>{{board[z*16+y*4+x]}}</p></td>
+<div id="top" style="background-color:lightblue;font-size:20pt">
+Welcome to my webpage where you can play 3D noughts and crosses
+</div>
+<div id="main" style="background-color:#FFFFFF;float:left;">
+  <div id="controls">
+    <input type="text" id="player" value="X"></input>
+    <input type="button" onclick="$.post('clr',{'gameID':gameID});"></input>
+    <input type="text" id="error" value="" disabled="disabled"></input>
+  </div>
+  
+  <div id="game">
+    <table class='main'>
+    {% for z in range(4) %}
+      <tr><td><table class='sub'>
+      {% for y in range(4) %}
+        <tr>
+        {% for x in range(4) %}
+          <td id={{ "t"~x~y~z }} class=won ><p id={{ "p"~x~y~z }} class=in-cell>{{board[z*16+y*4+x]}}</p></td>
+        {% endfor %}
+        </tr>
+      {% endfor %}
+      </table></td></tr>
     {% endfor %}
-    </tr>
-  {% endfor %}
-  </table></td></tr>
-{% endfor %}
-</table>
-<a href="?gameID=+gameID+&pageType=canvas">canvas</a>
+    </table>
+  </div>
+  
+  <div id="links">
+    <a href="?gameID={{gameID}}&pageType=canvas">canvas</a>
+  </div>
+</div>
+
+<div id="rules" style="background-color:green;color:orange;width:400px;float:right;">
+The cells represent 4 layers in a 4*4*4 cube. To win get four cells that form a line in the cube.<br>
+Click on a cell to make your move there.<br>
+<br>
+At the moment this is a very early version so you can change your counter by replacing the "X" in the text box with an "O", and reset the board by pressing the button next to it.
+</div>
 </body>
 </html>

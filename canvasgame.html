@@ -2,54 +2,18 @@
 <html>
 <head>
 
-<style type="text/css">
-table.main
-{
-}
-.main>tr>td
-{
-margin: 0;
-padding: 0;
-}
-
-table.sub
-{
-border-width: 0 0 2px 2px;
-border-spacing: 0;
-border-color: black;
-border-style: solid;
-}
-.sub td
-{
-width: 20px;
-height: 20px;
-border-width: 2px 2px 0 0;
-border-style: solid;
-border-color: black;
-}
-
-p.in-cell
-{
-text-align: center;
-margin: 0 0 0 0;
-}
-
-td.won
-{
-background-color: red;
-}
-</style>
-
-<title>Canvas test</title>
+<title>3DOX</title>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
 
 <script>
+var sz=32//width and height of a canvas cell
 //give the game an id
 var gameID={{gameID}}
 var timer
 
 function postMsg(data){$("#error").val(data.error);}
 
+/*
 function Show(data){
   for(z=0;z<4;z++){
     for(y=0;y<4;y++){
@@ -66,8 +30,48 @@ function Show(data){
       }
     }
   }
+*/
+function Show(data){
+  var c=document.getElementById("myCanvas");
+  var ctx=c.getContext("2d");
+  ctx.lineWidth=3
+  for(z=0;z<4;z++){
+    for(y=0;y<4;y++){
+      for(x=0;x<4;x++){
+			  ctx.fillStyle=col(255-32*x,255-32*y,255-40*z);
+			  ctx.fillRect(32*x,128*z+32*y,32,32);
+        if (data.board[z*16+y*4+x]=="X"){drawX(ctx,x,y,z);}
+        else if (data.board[16*z+y*4+x]=="O"){drawO(ctx,x,y,z);}
+        }
+      }
+    }
+  for (i in data.wonlines){
+    line=data.wonlines[i]
+    for(j=0;j<4;j++){
+      ctx.beginPath();
+      ctx.arc((line[j][0]+0.5)*sz,(line[j][1]+0.5+4*line[j][2])*sz,sz/4,0 , 2 * Math.PI, false);
+      ctx.fillStyle="yellow"
+      ctx.fill();
+      }
+    }
+  }
 
+function drawX(ctx,x,y,z){
+  ctx.beginPath();
+  ctx.strokeStyle="blue"
+  ctx.moveTo(x*sz+2,y*sz+z*sz*4+2);
+  ctx.lineTo(x*sz+sz-2,y*sz+z*sz*4+sz-2);
+  ctx.moveTo(x*sz+2,y*sz+z*sz*4+sz-2);
+  ctx.lineTo(x*sz+sz-2,y*sz+z*sz*4+2);
+  ctx.stroke();
+  }
 
+function drawO(ctx,x,y,z){
+  ctx.beginPath();
+  ctx.strokeStyle="red"
+  ctx.arc((x+0.5)*sz,(y+0.5+4*z)*sz,sz/2-2,0 , 2 * Math.PI, false);
+  ctx.stroke();
+}
 //functions independent of IO
 function click(pos,player){
   $.post('post?pos='+pos+'&gameID='+gameID+'&player='+player,
@@ -83,25 +87,47 @@ $.ajaxSetup({cache:false});
 
 $(document).ready(function(){
 
-$(".sub td").click(function(){
+/*$(".sub td").click(function(){
   var player=$("#player").val()
   if (player=="X" || player=="O"){
     click($(this).attr("id").substr(1),player)
     }
   });
 $("#error").val("none")
-
+*/
   
 //poll the server regularly
 timer=setInterval(function(){
   var player=$("#player").val()
   if (player=="X" || player=="O"){poll(player);}
-  }, 5000);
+  }, 2000);
 
 });
 
 function st(){clearInterval(timer);}
+</script>
+</head>
+<body>
+<div id="top" style="background-color:lightblue;font-size:20pt">
+  Welcome to my webpage where you can play 3D noughts and crosses
+</div>
+<div id="main" style="background-color:#FFFFFF;float:left;">
+  <div id="controls">
+    <input type="text" id="player" value="X"></input>
+    <input type="button" onclick="$.post('clr',{'gameID':gameID});"></input>
+    <input type="text" id="error" value="" disabled="disabled"></input>
+  </div>
+  
+  <div id="game">
+    <canvas id="myCanvas" width=128 height=512>
+      your browser does not support this feature
+    </canvas>
+    <script>
 
+$("#myCanvas").width(sz*4)
+$("#myCanvas").height(sz*16)
+var c=document.getElementById("myCanvas");
+var ctx=c.getContext("2d");
 
 String.prototype.lpad = function(padString, length) {
 	var str = this;
@@ -109,21 +135,6 @@ String.prototype.lpad = function(padString, length) {
 		str = padString + str;
 	return str;
 }
-</script>
-</head>
-<body>
-<input type="text" id="player" value="X"></input>
-<input type="button" onclick="$.post('clr',{'gameID':gameID});"></input>
-<input type="text" id="error" value="" disabled="disabled"></input>
-
-<canvas id="myCanvas" width="100" height="400"
-style="border:1px solid #000000;">
-your browser does not support this feature
-</canvas>
-
-<script>
-var c=document.getElementById("myCanvas");
-var ctx=c.getContext("2d");
 
 function col(r,g,b){
 return "#"+(b+g*256+r*256*256).toString(16).lpad("0",6)}
@@ -131,12 +142,35 @@ return "#"+(b+g*256+r*256*256).toString(16).lpad("0",6)}
 for(x=0;x<4;x++){
 	for(y=0;y<4;y++){
 		for(z=0;z<4;z++){
-			ctx.fillStyle=col(64*x,64*y,64*z);
-			ctx.fillRect(25*x,100*z+25*y,25,25);
+			ctx.fillStyle=col(255-32*x,255-32*y,255-40*z);
+			ctx.fillRect(sz*x,sz*4*z+sz*y,sz,sz);
 		}
 	}
 }
 
-</script>
+
+function getCell(mx,my){
+  var x=Math.floor(mx/sz);
+  var z=Math.floor(my/(sz*4));
+  var y=Math.floor((my-z*sz*4)/sz)
+  return [x,y,z]}
+
+$("#myCanvas").mousedown(function(e){
+  click(getCell(e.offsetX,e.offsetY).join(""),$("#player").val())});
+    </script>
+  </div>
+
+  <div id="links"><a href="?gameID={{gameID}}&pageType=table">basic version (for older browsers)</a></div>
+</div>
+
+<div id="rules" style="background-color:green;color:orange;width:400px;float:right;">
+  The cells represent 4 layers in a 4*4*4 cube. To win get four cells that form a line in the cube.<br>
+  Click on a cell to make your move there.<br>
+  <br>
+  At the moment this is a very early version so you can change your counter by replacing the "X" in the text box with an "O", and reset the board by pressing the button next to it.
+</div>
+</body>
+</html>
+
 </body>
 </html>
