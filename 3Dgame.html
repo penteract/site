@@ -92,13 +92,7 @@ function poll(player){
 //end of IO independent functions
 $.ajaxSetup({cache:false});
 
-$(document).ready(function(){
-  //poll the server regularly
-  timer=setInterval(function(){
-    var player=$("#player").val()
-    if (player=="X" || player=="O"){poll(player);}
-    }, 2000);
-  });*/
+*/
 
 function st(){clearInterval(timer);}
 </script>
@@ -188,7 +182,7 @@ function drawcell(n,cell){
   x=cell[0][0];
   y=cell[0][2];
   z=cell[0][4];
-  ctx.lineWidth=5;
+  //ctx.lineWidth=5;
   $.each(co,function(i,e){
       if (!(1&i)){drawline(e,co[i+1],col(60*x,60*y,40*z));}
       if (!(2&i)){drawline(e,co[i+2],col(60*x,60*y,40*z));}
@@ -237,6 +231,18 @@ function pitch(a){
   
 pitch(Math.PI/4);
 yaw(Math.PI/4);
+var avp=0.005
+var avy=0.01
+
+$(document).ready(function(){
+  //poll the server regularly
+  timer=setInterval(function(){
+    pitch(avp);
+    yaw(avy);
+    
+    }, 1);
+  });
+
 
 /*$("#myCanvas").mousedown(function(e){
   click(getCell(e.offsetX,e.offsetY).join(""),$("#player").val())});*/
