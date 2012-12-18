@@ -47,7 +47,7 @@ class MainPage(webapp.RequestHandler):
             gmNum="5"
         gameID = game_key(gmNum)
         gm=GameData.get(gameID)
-        #if someone else creates a game with the same key at this point it will be overwritten, but that shouldn't matter because they would both be identical
+        #if someone else creates a game with the same key at this point it will be overwritten, but that shouldn't matter because they would both be identical (empty)
         if gm==None:
             gm=GameData(key_name=gmNum)
             gm.turn="X"
@@ -62,6 +62,8 @@ class MainPage(webapp.RequestHandler):
             template = jinja_environment.get_template('tablegame.html')
         if pageType=="" or pageType=="canvas":
             template = jinja_environment.get_template('canvasgame.html')
+        if pageType=="threeD":
+            template = jinja_environment.get_template('3Dgame.html')
         self.response.out.write(template.render(template_values))
 
 

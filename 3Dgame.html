@@ -182,7 +182,7 @@ function drawcell(n,cell){
   x=cell[0][0];
   y=cell[0][2];
   z=cell[0][4];
-  //ctx.lineWidth=5;
+  ctx.lineWidth=5.0/cell[1]
   $.each(co,function(i,e){
       if (!(1&i)){drawline(e,co[i+1],col(60*x,60*y,40*z));}
       if (!(2&i)){drawline(e,co[i+2],col(60*x,60*y,40*z));}
@@ -235,7 +235,6 @@ var avp=0.005
 var avy=0.01
 
 $(document).ready(function(){
-  //poll the server regularly
   timer=setInterval(function(){
     pitch(avp);
     yaw(avy);
@@ -250,7 +249,10 @@ $(document).ready(function(){
     </script>
   </div>
 
-  <div id="links"><a href="?gameID={{gameID}}&pageType=table">basic version (for older browsers)</a></div>
+  <div id="links">
+    <a href="?gameID={{gameID}}&pageType=table">basic version (for older browsers)</a><br />
+    <a href="?gameID={{gameID}}&pageType=canvas">canvas</a>
+  </div>
 </div>
 
 <div id="rules" style="background-color:green;color:orange;width:400px;float:right;">
