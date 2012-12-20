@@ -134,7 +134,7 @@ var cells={};
 for(z=0;z<4;z++){
   for(y=0;y<4;y++){
     for(x=0;x<4;x++){
-      cells[[x,y,z]]=[[CUBECENTER[0]-2+x,CUBECENTER[1]-2+y,CUBECENTER[2]-2+z]];
+      cells[[x,y,z]]=[[CUBECENTER[0]-1.5+x,CUBECENTER[1]-1.5+y,CUBECENTER[2]-1.5+z]];
       }
     }
   }
@@ -145,7 +145,7 @@ $.each(cells,function (index,cell){
   y=c[1];
   z=c[2];
   for(k=0;k<8;k++){
-    cell.push([x+(k&1?1-gap:gap),y+(k&2?1-gap:gap),z+(k&4?1-gap:gap)]);
+    cell.push([x+(k&1?0.5-gap:gap-0.5),y+(k&2?0.5-gap:gap-0.5),z+(k&4?0.5-gap:gap-0.5)]);
     }
   cell.push(" ");
   })
@@ -157,7 +157,7 @@ var coords={};//canvas coordinates of each corner
 
 function sortcells(){
   scells=[];
-  $.each(cells,function(i,cell){scells.push([i,dist3(cell[0])]);});
+  for(i in cells){scells.push([i,dist3(cells[i][0])]);}
   scells.sort(function(a,b){return b[1]-a[1]});
   }
 
@@ -169,11 +169,10 @@ function mappoint(pos){//maps a point in 3d space to a point on the canvas
 
 
 
-function drawline(a,b,col){
+function drawline(a,b){
   ctx.beginPath();
   ctx.moveTo(a[0],a[1]);
   ctx.lineTo(b[0],b[1]);
-  ctx.strokeStyle=col;
   ctx.stroke();
   }
   
@@ -183,20 +182,23 @@ function drawcell(n,cell){
   y=cell[0][2];
   z=cell[0][4];
   ctx.lineWidth=5.0/cell[1]
-  $.each(co,function(i,e){
-      if (!(1&i)){drawline(e,co[i+1],col(60*x,60*y,40*z));}
-      if (!(2&i)){drawline(e,co[i+2],col(60*x,60*y,40*z));}
-      if (!(4&i)){drawline(e,co[i+4],col(60*x,60*y,40*z));}
-      });
+  ctx.strokeStyle=col(60*x,60*y,40*z);
+  for (i=0;i<co.length;i++){
+      e=co[i];
+      if (!(1&i)){drawline(e,co[i+1]);}
+      if (!(2&i)){drawline(e,co[i+2]);}
+      if (!(4&i)){drawline(e,co[i+4]);}
+      }
   }
 
 function draw(){
   sortcells()
   
-  $.each(cells,function(index,cell){
-    coords[index]=[]
-    $.each(cell.slice(1,9),function(n,vertex){coords[index].push(mappoint(vertex))});
-    });
+  for(index in cells){
+    coords[index]=[];
+    var cs=cells[index].slice(1,9);var n;
+    for (n=0;n<cs.length;n++){coords[index].push(mappoint(cs[n]));}
+    }
   ctx.beginPath();
   ctx.rect(0,0,CANVASSIZE,CANVASSIZE);
   ctx.fillStyle = 'white';
@@ -206,27 +208,32 @@ function draw(){
 draw()
 
 
-
-function yaw(a){
-  $.each(cells,function(index,cell){
-      $.each(cell.slice(0,9),function(i,xyz){
-          xz=rotate(xyz[0]-CUBECENTER[0],xyz[2]-CUBECENTER[2],a);
-          xyz[0]=xz[0]+CUBECENTER[0];
-          xyz[2]=xz[1]+CUBECENTER[2];
-          });
-      });
-  draw();
-  }
-
 function pitch(a){
-  $.each(cells,function(index,cell){
-      $.each(cell.slice(0,9),function(i,xyz){
+  var index;
+  for(index in cells){
+      var cell=cells[index];
+      var s=cell.slice(0,9);
+      for(i in s){
+          xyz=s[i];
           xz=rotate(xyz[2]-CUBECENTER[2],xyz[1]-CUBECENTER[1],a);
           xyz[1]=xz[1]+CUBECENTER[1];
           xyz[2]=xz[0]+CUBECENTER[2];
-          });
-      });
-  draw();
+          }
+      }
+  }
+
+
+function yaw(a){
+  for(index in cells){
+      cell=cells[index];
+      s=cell.slice(0,9);
+      for(i in s){
+          xyz=s[i];
+          xz=rotate(xyz[0]-CUBECENTER[0],xyz[2]-CUBECENTER[2],a);
+          xyz[0]=xz[0]+CUBECENTER[0];
+          xyz[2]=xz[1]+CUBECENTER[2];
+          }
+      }
   }
   
 pitch(Math.PI/4);
@@ -238,8 +245,9 @@ $(document).ready(function(){
   timer=setInterval(function(){
     pitch(avp);
     yaw(avy);
+    draw();
     
-    }, 1);
+    }, 10);
   });
 
 
