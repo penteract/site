@@ -131,7 +131,7 @@ function st(){clearInterval(timer);}
     <form name="options">
       Slipperiness:<input name="slipperiness" type="range" value=75 onchange="SLIPPERINESS=Math.sqrt(1-(opts.slipperiness.value-100)*(opts.slipperiness.value-100)/10000);"><br />
       Sensitivity:<input name="sensitivity" type="range" value=7 onchange="SENSITIVITY=Math.exp(opts.sensitivity.value/25.0-6.5);"><br />
-      Distance:<input name="distance" type="range" value=50 onchange="VIEWDIST=200/(opts.distance.value*1.0+150);"><br />
+      Distance:<input name="distance" type="range" value=0 onchange="VIEWDIST=200/(opts.distance.value*1.0+150);"><br />
     </form>
     <script>
 
@@ -139,7 +139,7 @@ var Canvas=document.getElementById("Canvas");
 var ctx=Canvas.getContext("2d");
 
 var CUBECENTER=[0.0,0.0,7.0];
-var VIEWDIST=1.0;
+var VIEWDIST=4.0/3;
 var VIEWSIZE=0.7;
 var CANVASSIZE=500;
 var SENSITIVITY=0.002;
@@ -181,7 +181,7 @@ for(index in cells){
   for(var k=0;k<8;k++){
     cell.push([x+(k&1?0.5-gap:gap-0.5),y+(k&2?0.5-gap:gap-0.5),z+(k&4?0.5-gap:gap-0.5)]);
     }
-  cell.push("X");
+  cell.push("O");
   }
 
 var scells=[];//sorted in order of distance from the viewer, furthest first
@@ -210,9 +210,11 @@ function drawcell(n,cellpos){//draws a cell and any token inside it
   var x=cellpos[0][0];
   var y=cellpos[0][2];
   var z=cellpos[0][4];
+  
   var lineWidth=5.0/Math.sqrt(cellpos[1]);
   ctx.lineWidth=((-x-y-z*1.5)*(-x-y-z*1.5)/80+1)*lineWidth;
   ctx.strokeStyle=col(60*x,60*y,60*z);
+  
   var e=[]
   for (var i=0;i<edges.length;i++){
     var pair=edges[i];
@@ -232,9 +234,7 @@ function drawcell(n,cellpos){//draws a cell and any token inside it
     }
   if (cell[9]=="O"){
     ctx.strokeStyle="#ff0000";
-    drawcirc();//todo - find parameters
-    ctx.fillStyle = 'green';
-    ctx.fill();
+    drawcirc(co[8][0],co[8][1],lineWidth*15);
     }
     
   ctx.strokeStyle=col(60*x,60*y,60*z);
@@ -244,6 +244,7 @@ function drawcell(n,cellpos){//draws a cell and any token inside it
     }
   }
 
+
 function draw(){//draws the grid of cells onto the canvas
   sortcells()
   
@@ -251,6 +252,7 @@ function draw(){//draws the grid of cells onto the canvas
     coords[index]=[];
     var cs=cells[index].slice(1,9);
     for (var n=0;n<cs.length;n++){coords[index].push(mappoint(cs[n]));}
+    coords[index].push(mappoint(cells[index][0]));
     }
   ctx.beginPath();
   ctx.rect(0,0,CANVASSIZE,CANVASSIZE);
