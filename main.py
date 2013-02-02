@@ -7,6 +7,8 @@ from google.appengine.ext import webapp
 from google.appengine.ext.webapp import util
 from django.utils import simplejson
 from google.appengine.ext import db
+from google.appengine.api import channel
+from random import randrange
 import jinja2
 
 jinja_environment = jinja2.Environment(
@@ -34,37 +36,69 @@ class GameData(db.Model):
     turn=db.StringProperty()#"O" or "X"
     winpos=db.StringProperty()#"" or "xyz"
     board=db.StringProperty()#" ","O" or "X" 64 times
+    viewers=db.ListProperty(str)
   
 def game_key(gameNum):
     """Constructs a Datastore key for a Start entity with a given id."""
     return db.Key.from_path('GameData',gameNum)
     
+@db.transactional
+def addViewer(gameID,viewerID):
+    """adds a viewer to the game's list of viewers and sends the viewer the current game state"""
+    gm=GameData.get(game_key(gameID))
+    if viewerID not in gm.viewers:
+        gm.viewers.append(viewerID+gameID);
+        gm.put()
+    channel.send_message(viewerID+gameID,simplejson.dumps(Game(gm).getData()))
+    
+    
+    
 class MainPage(webapp.RequestHandler):
     """ Renders the main template."""
     def get(self):
+        #set up the game if necessary
         gmNum=self.request.get('gameID')
+        plNum=self.request.get('viewerID')
         if gmNum=="":
             gmNum="5"
+        if plNum=="":
+            plNum="5"
         gameID = game_key(gmNum)
         gm=GameData.get(gameID)
-        #if someone else creates a game with the same key at this point it will be overwritten, but that shouldn't matter because they would both be identical (empty)
+        #if someone else creates a game with the same key at this point it will be overwritten, but that shouldn't matter because they would both be identical (empty) - it might matter as user ID's get added
         if gm==None:
             gm=GameData(key_name=gmNum)
             gm.turn="X"
             gm.board=" "*64
             gm.winpos=""
+            gm.viewers=[]
             gm.put()
-        #doesn't always show the board, may be a problem with caching
-        template_values = {'gameID':gmNum,"board":gm.board}
         
+        #create the token
+        token=channel.create_channel(plNum + gmNum)
+        
+        #show the page
+        #doesn't always show the board, may be a problem with caching
+        template_values = {"gameID":gmNum,
+                           "board":gm.board,
+                           "viewerID":plNum,
+                           "token":token}
         pageType=self.request.get('pageType')
-        if pageType=="table":
+        if pageType=="" or pageType=="table":
             template = jinja_environment.get_template('tablegame.html')
-        if pageType=="" or pageType=="canvas":
+        if pageType=="canvas":
             template = jinja_environment.get_template('canvasgame.html')
         if pageType=="threeD":
             template = jinja_environment.get_template('3Dgame.html')
         self.response.out.write(template.render(template_values))
+
+
+class AddView(webapp.RequestHandler):
+    """adds a viewer to the game when the client's javascript opens the channel"""
+    def post(self):
+        gameID = self.request.get('gameID')
+        vID=self.request.get('viewerID')
+        addViewer(gameID,vID)
 
 
 class AjaxHandler(webapp.RequestHandler):
@@ -75,6 +109,7 @@ class AjaxHandler(webapp.RequestHandler):
         game=Game(gm)
         self.response.out.write(simplejson.dumps(game.getData()))
 
+    @db.transactional
     def post(self):
         pos = self.request.get('pos')
         x,y,z=(int(c) for c in pos)
@@ -89,6 +124,8 @@ class AjaxHandler(webapp.RequestHandler):
             return None
         game.sync(gm)
         gm.put()
+        for viewer in gm.viewers:
+            channel.send_message(viewer,simplejson.dumps(game.getData()))
         data={"error":"none"}
         self.response.out.write(simplejson.dumps(data))
         
@@ -193,6 +230,7 @@ app = webapp.WSGIApplication([
     ('/post', AjaxHandler),
     ('/get', AjaxHandler),
     ('/clr', NewGame),
+    ('/add', AddView),
     #('/clrall', Clear),
     ('/', MainPage),
      ], debug=True)

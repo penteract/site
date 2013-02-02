@@ -42,15 +42,17 @@ background-color: red;
 
 <title>3DOX</title>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
+<script type="text/javascript" src="/_ah/channel/jsapi"></script>
 
 <script>
+viewerID={{viewerID}};
 //give the game an id
-var gameID={{gameID}}
+var gameID={{gameID}};
 var timer
 
 function postMsg(data){$("#error").val(data.error);}
 
-function Show(data){
+function show(data){
   for(z=0;z<4;z++){
     for(y=0;y<4;y++){
       for(x=0;x<4;x++){
@@ -67,43 +69,14 @@ function Show(data){
     }
   }
 
-
-//functions independent of IO
-function click(pos,player){
-  $.post('post?pos='+pos+'&gameID='+gameID+'&player='+player,
-  postMsg,'json')
-  }
-  
-function poll(player){
-  $.getJSON('get',{'gameID':gameID,'player':player}, Show);
-  }
-
-//end of IO independent functions
 $.ajaxSetup({cache:false});
 
-$(document).ready(function(){
-
-$(".sub td").click(function(){
-  var player=$("#player").val()
-  if (player=="X" || player=="O"){
-    click($(this).attr("id").substr(1),player)
-    }
-  });
-$("#error").val("none")
-
-  
-//poll the server regularly
-timer=setInterval(function(){
-  var player=$("#player").val()
-  if (player=="X" || player=="O"){poll(player);}
-  }, 5000);
-
-});
-
-function st(){clearInterval(timer);}
 </script>
 </head>
 <body>
+<script>
+
+</script>
 <div id="top" style="background-color:lightblue;font-size:20pt">
 Welcome to my webpage where you can play 3D noughts and crosses
 </div>
@@ -141,5 +114,33 @@ Click on a cell to make your move there.<br>
 <br>
 At the moment this is a very early version so you can change your counter by replacing the "X" in the text box with an "O", and reset the board by pressing the button next to it.
 </div>
+
+<script>
+//functions independent of IO
+function click(pos,player){
+  $.post('post?pos='+pos+'&gameID='+gameID+'&player='+player,
+  postMsg,'json')
+  }
+
+
+//set up channel
+channel = new goog.appengine.Channel('{{ token }}');
+socket = channel.open();
+socket.onmessage = function(m){show(JSON.parse(m.data));};
+socket.onopen = function(){$.post('add',{'gameID':gameID,'viewerID':viewerID});};
+/*socket.onerror = onError;
+socket.onclose = onClose;*/
+
+//end of functions independent of IO
+
+$(".sub td").click(function(){
+  var player=$("#player").val()
+  if (player=="X" || player=="O"){
+    click($(this).attr("id").substr(1),player)
+    }
+  });
+$("#error").val("none")
+</script>
+
 </body>
 </html>
