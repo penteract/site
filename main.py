@@ -82,7 +82,7 @@ class MainPage(webapp.RequestHandler):
         template_values = {"gameID":gmNum,
                            "board":gm.board,
                            "viewerID":plNum,
-                           "token":token}
+                           "chtoken":token}
         pageType=self.request.get('pageType')
         if pageType=="" or pageType=="table":
             template = jinja_environment.get_template('tablegame.html')

@@ -4,6 +4,7 @@
 
 <title>3DOX</title>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
+<script type="text/javascript" src="/_ah/channel/jsapi"></script>
 
 <script>
 String.prototype.lpad = function(padString, length) {
@@ -18,13 +19,12 @@ function col(r,g,b){
 
 
 var sz=32//width and height of a canvas cell
-//give the game an id
-var gameID={{gameID}}
-var timer
+var viewerID={{viewerID}};
+var gameID={{gameID}};
 
 function postMsg(data){$("#error").val(data.error);}
 
-function Show(data){
+function show(data){
   var c=document.getElementById("myCanvas");
   var ctx=c.getContext("2d");
   ctx.lineWidth=3
@@ -65,30 +65,10 @@ function drawO(ctx,x,y,z){
   ctx.arc((x+0.5)*sz,(y+0.5+4*z)*sz,sz/2-2,0 , 2 * Math.PI, false);
   ctx.stroke();
 }
-//functions independent of IO
-function click(pos,player){
-  $.post('post?pos='+pos+'&gameID='+gameID+'&player='+player,
-  postMsg,'json')
-  }
-  
-function poll(player){
-  $.getJSON('get',{'gameID':gameID,'player':player}, Show);
-  }
 
-//end of IO independent functions
 $.ajaxSetup({cache:false});
 
-$(document).ready(function(){
-  
-//poll the server regularly
-timer=setInterval(function(){
-  var player=$("#player").val()
-  if (player=="X" || player=="O"){poll(player);}
-  }, 2000);
 
-});
-
-function st(){clearInterval(timer);}
 </script>
 </head>
 <body>
@@ -133,8 +113,8 @@ $("#myCanvas").mousedown(function(e){
   </div>
 
   <div id="links">
-    <a href="?gameID={{gameID}}&pageType=table">basic version (for older browsers)</a><br />
-    <a href="?gameID={{gameID}}&pageType=threeD">a taste of things to come</a>
+    <a href="?pageType=table&gameID={{gameID}}&viewerID={{viewerID}}">basic version (for older browsers)</a><br />
+    <a href="?pageType=threeD&gameID={{gameID}}&viewerID={{viewerID}}">a taste of things to come</a>
   </div>
 </div>
 
@@ -144,6 +124,24 @@ $("#myCanvas").mousedown(function(e){
   <br>
   At the moment this is a very early version so you can change your counter by replacing the "X" in the text box with an "O", and reset the board by pressing the button next to it.
 </div>
+
+<script>
+//functions independent of IO
+
+function click(pos,player){
+  $.post('post?pos='+pos+'&gameID='+gameID+'&player='+player,
+  postMsg,'json')
+  }
+
+//set up channel
+channel = new goog.appengine.Channel('{{ chtoken }}');
+socket = channel.open();
+socket.onmessage = function(m){show(JSON.parse(m.data));};
+socket.onopen = function(){$.post('add',{'gameID':gameID,'viewerID':viewerID});};
+/*socket.onerror = onError;
+socket.onclose = onClose;*/
+</script>
+
 </body>
 </html>
 

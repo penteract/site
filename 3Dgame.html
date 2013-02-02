@@ -4,6 +4,7 @@
 
 <title>3DOX</title>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
+<script type="text/javascript" src="/_ah/channel/jsapi"></script>
 
 <script>
 function dist3(l){return (l[0]*l[0]+l[1]*l[1]+l[2]*l[2]);}//for comparisons, does not sqrt
@@ -45,70 +46,37 @@ function drawcirc(x,y,r){//draws a line from a to b
   }
 
 
-/* //give the game an id
+var viewerID={{viewerID}};
 var gameID={{gameID}}
-var timer
 
 function postMsg(data){$("#error").val(data.error);}
 
 
-function Show(data){
-  var c=document.getElementById("myCanvas");
-  var ctx=c.getContext("2d");
-  ctx.lineWidth=3
+function show(data){
   for(z=0;z<4;z++){
     for(y=0;y<4;y++){
       for(x=0;x<4;x++){
-			  ctx.fillStyle=col(255-32*x,255-32*y,255-40*z);
-			  ctx.fillRect(32*x,128*z+32*y,32,32);
-        if (data.board[z*16+y*4+x]=="X"){drawX(ctx,x,y,z);}
-        else if (data.board[16*z+y*4+x]=="O"){drawO(ctx,x,y,z);}
+        cells[[x,y,z]][9]=data.board[z*16+y*4+x];
         }
       }
     }
-  for (i in data.wonlines){
-    line=data.wonlines[i]
+  for (i=0;i<data.wonlines.length;i++){
     for(j=0;j<4;j++){
-      ctx.beginPath();
-      ctx.arc((line[j][0]+0.5)*sz,(line[j][1]+0.5+4*line[j][2])*sz,sz/4,0 , 2 * Math.PI, false);
-      ctx.fillStyle="yellow"
-      ctx.fill();
+      c=data.wonlines[i][j];
+      cells[[c[0],c[1],c[2]]][9]+="W";
       }
     }
   }
 
-function drawX(ctx,x,y,z){
-  ctx.beginPath();
-  ctx.strokeStyle="blue"
-  ctx.moveTo(x*sz+2,y*sz+z*sz*4+2);
-  ctx.lineTo(x*sz+sz-2,y*sz+z*sz*4+sz-2);
-  ctx.moveTo(x*sz+2,y*sz+z*sz*4+sz-2);
-  ctx.lineTo(x*sz+sz-2,y*sz+z*sz*4+2);
-  ctx.stroke();
-  }
-
-function drawO(ctx,x,y,z){
-  ctx.beginPath();
-  ctx.strokeStyle="red"
-  ctx.arc((x+0.5)*sz,(y+0.5+4*z)*sz,sz/2-2,0 , 2 * Math.PI, false);
-  ctx.stroke();
-}
 //functions independent of IO
 function click(pos,player){
   $.post('post?pos='+pos+'&gameID='+gameID+'&player='+player,
   postMsg,'json')
   }
-  
-function poll(player){
-  $.getJSON('get',{'gameID':gameID,'player':player}, Show);
-  }
 
 //end of IO independent functions
 $.ajaxSetup({cache:false});
 
-*/
-
-function st(){clearInterval(timer);}
 </script>
 </head>
 <body>
@@ -139,7 +107,7 @@ var Canvas=document.getElementById("Canvas");
 var ctx=Canvas.getContext("2d");
 
 var CUBECENTER=[0.0,0.0,7.0];
-var VIEWDIST=4.0/3;
+var VIEWDIST=4.0/3;//distanve between the viewport and the origin
 var VIEWSIZE=0.7;
 var CANVASSIZE=500;
 var SENSITIVITY=0.002;
@@ -159,8 +127,8 @@ var opts=document.options;
 
 
 //initalize the cells and verticies
-/*the cells are stored as an object with 0,0,0 , 0,0,1 ... 3,3,3 as keys.
-The data stored about each cell is a list, containing the closest integer coordinate to the cell at the bottom left front, followed by the coordinates of each corner, then the contents of the cell*/
+/*the cells are stored as an object with '0,0,0' , '0,0,1' ... '3,3,3' as keys.
+The data stored about each cell is a list, containing the coordinates of the center, followed by the coordinates of each corner, then the contents of the cell(the token or a " ", followed by a "W" if it is part of a winning line*/
 var cells={};
 
 
@@ -173,7 +141,7 @@ for(z=0;z<4;z++){
   }
 
 for(index in cells){
-  cell=cells[index];
+  var cell=cells[index];
   var c=cell[0];
   var x=c[0];
   var y=c[1];
@@ -181,7 +149,7 @@ for(index in cells){
   for(var k=0;k<8;k++){
     cell.push([x+(k&1?0.5-gap:gap-0.5),y+(k&2?0.5-gap:gap-0.5),z+(k&4?0.5-gap:gap-0.5)]);
     }
-  cell.push("O");
+  cell.push("OW");
   }
 
 var scells=[];//sorted in order of distance from the viewer, furthest first
@@ -211,7 +179,7 @@ function drawcell(n,cellpos){//draws a cell and any token inside it
   var y=cellpos[0][2];
   var z=cellpos[0][4];
   
-  var lineWidth=5.0/Math.sqrt(cellpos[1]);
+  var lineWidth=4.0/Math.sqrt(cellpos[1])*VIEWDIST;
   ctx.lineWidth=((-x-y-z*1.5)*(-x-y-z*1.5)/80+1)*lineWidth;
   ctx.strokeStyle=col(60*x,60*y,60*z);
   
@@ -224,17 +192,24 @@ function drawcell(n,cellpos){//draws a cell and any token inside it
   for (var i=0;i<e.length;i++){
     if (e[i][2]>cellpos[1]){drawline(e[i][0],e[i][1]);}
     }
-    
+   
+  content=cell[9]
   ctx.lineWidth=lineWidth*2;
-  if (cell[9]=="X"){
+  if (content[0]=="X"){
     ctx.strokeStyle="#0000ff";
     for (var i=0;i<4;i++){
       drawline(co[i],co[(~i)&7]);//draw a line to the opposite corner
       }
     }
-  if (cell[9]=="O"){
+  if (content[0]=="O"){
     ctx.strokeStyle="#ff0000";
     drawcirc(co[8][0],co[8][1],lineWidth*15);
+    }  
+  if (content[1]=="W"){
+    ctx.fillStyle="orange"
+    ctx.beginPath();
+    ctx.arc(co[8][0],co[8][1],lineWidth*8,0 , 2 * Math.PI, false);
+    ctx.fill();
     }
     
   ctx.strokeStyle=col(60*x,60*y,60*z);
@@ -314,8 +289,8 @@ Canvas.onmousedown=function(e){if(e.button==2){rmb=true}};
 Canvas.onmouseup=function(e){
   if(e.button==2){rmb=false}};
 Canvas.onmousemove=function(e){if(rmb){
-    avp=(e.MovementY||e.webkitMovementY||e.mozMovementY||0)*SENSITIVITY;
-    avy=(e.MovementX||e.webkitMovementX||e.mozMovementX||0)*SENSITIVITY;
+    avp+=(e.MovementY||e.webkitMovementY||e.mozMovementY||0)*SENSITIVITY;
+    avy+=(e.MovementX||e.webkitMovementX||e.mozMovementX||0)*SENSITIVITY;
     draw();vv=e;}
   };
 Canvas.oncontextmenu=function(e){return false;};
@@ -331,10 +306,27 @@ Canvas.oncontextmenu=function(e){return false;};
 </div>
 
 <div id="rules" style="background-color:green;color:orange;width:400px;float:right;">
-  This layout does not currently show moves or let you make them.<br>
+  This layout does not currently let you make moves.<br>
   If you right-click and drag, the cube spins<br>
   Works in chrome and firefox, if you arn't using chrome, parameters should be between 0 and 100
 </div>
+
+<script>
+//functions independent of IO
+
+function click(pos,player){
+  $.post('post?pos='+pos+'&gameID='+gameID+'&player='+player,
+  postMsg,'json')
+  }
+
+//set up channel
+channel = new goog.appengine.Channel('{{ chtoken }}');
+socket = channel.open();
+socket.onmessage = function(m){show(JSON.parse(m.data));};
+socket.onopen = function(){$.post('add',{'gameID':gameID,'viewerID':viewerID});};
+/*socket.onerror = onError;
+socket.onclose = onClose;*/
+</script>
 
 </body>
 </html>
