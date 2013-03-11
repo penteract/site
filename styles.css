@@ -3,12 +3,17 @@ body {background-color:#FFFFFF;
 
 #top {background-color:lightblue;
 	font-size:20pt;
-	font-family:"Bell MT",serif;}
+	font-family:"Bell MT",serif;
+	padding:5px;}
 
-#main {float:left;}
+#main {float:left;width:65%;
+	min-width:15em;}
 
-#side {background-color:green;
-	color:orange;
-	width:400px;
+#side {background-color:#c0302d;
+	color:white;
+	width:30%;
+	min-width:7em;
+	padding:1px 5px 5px 5px;
 	float:right;
+	text-align:right;
 	font-family:calibri,sans-serif;}

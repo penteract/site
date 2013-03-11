@@ -41,12 +41,12 @@ class GameData(db.Model):
     turn=db.StringProperty()#"O" or "X"
     winpos=db.StringProperty()#"" or "xyz"
     board=db.StringProperty()#" ","O" or "X" 64 times
-    TimeCreated = db.DateTimeProperty(auto_now_add=True)
-    PlayerX=db.UserProperty()
-    PlayerO=db.UserProperty()
-    TimeLimit=db.DateTimeProperty()
-    LastTurn=db.DateTimeProperty()
-    Started=db.BooleanProperty()
+    timeCreated = db.DateTimeProperty(auto_now_add=True)
+    playerX=db.UserProperty()
+    playerO=db.UserProperty()
+    timeLimit=db.DateTimeProperty()
+    lastTurn=db.DateTimeProperty()
+    started=db.BooleanProperty()
   
 def game_key(gameNum):
     """Constructs a Datastore key for a GameData entity with a given id."""
@@ -58,7 +58,7 @@ class PlayerData(db.Model):
     username=db.StringProperty()
     score=db.IntegerProperty()
     lastOnline =db.DateTimeProperty()
-    Online=db.BooleanProperty()#if False, definitely not online
+    online=db.BooleanProperty()#if False, definitely not online
     dateJoined = db.DateTimeProperty(auto_now_add=True)
     
 def getPlayer(nickname):
@@ -126,6 +126,9 @@ class ChangeName(webapp.RequestHandler):
     def post(self):
         pl=getCurrentPlayer()
         if not pl: return None
+        newName=self.request.get("name")
+        if len(newName)>20:
+            return None
         pl.username=self.request.get("name")
         pl.put()
 
@@ -143,6 +146,7 @@ class ChannelCreator(webapp.RequestHandler):
 
 class NewGame(webapp.RequestHandler):
     """handles a request by one player to start a game with another"""
+    
     def get(self):
         """returns a page where the user can select options for the game they want to start"""
         pl=getCurrentPlayer()
@@ -159,7 +163,9 @@ class NewGame(webapp.RequestHandler):
             return None
         template_values = {"name":pl.username,
                            "chtoken":pl.token,
-                           "opponent":{"name":op.username,"id":hash(op.account.nickname()),"score":op.score}
+                           "opponent":{"name":op.username,
+                                       "id":hash(op.account.nickname()),
+                                       "score":op.score}
                            }
         template = jinja_environment.get_template('offer.html')
         self.response.out.write(template.render(template_values))
@@ -170,7 +176,6 @@ class NewGame(webapp.RequestHandler):
         """notifies the other player to see if they want to start the game (and to check if they are online)"""
         pl=getCurrentPlayer()
         if not pl:
-            self.redirect("/")
             return None
         opponent=self.request.get("opponent")
         #check the opponent
@@ -195,6 +200,7 @@ class NewGame(webapp.RequestHandler):
         gm.started=False
         gm.playerO=pl.account
         gm.playerX=op.account
+        gm.timeLimit=seconds
         gm.put()
         
         #tell the opponent
@@ -202,6 +208,7 @@ class NewGame(webapp.RequestHandler):
         op.put()
         message={"request":"NewGame",
                  "player":pl.username+" ("+str(pl.score)+")",
+                 "time":time,
                  "gameID":gmNum}
         channel.send_message(op.account.nickname(),simplejson.dumps(message))
         self.response.out.write(gmNum)
@@ -209,9 +216,26 @@ class NewGame(webapp.RequestHandler):
         
 class Response(webapp.RequestHandler):
     """handles the response to a game request"""
+    
+    @db.transactional(xg=True)#check if xg necessary
     def post(self):
         pl=getCurrentPlayer()
         if not pl:return None
+        gmNum=self.request.get("gameID")
+        gm=GameData.get(game_key(gmNum))
+        if not gm or gm.Started:
+            self.response.out.write("no")
+            return None
+        check(pl.account,gm.playerX,"player replying to a game which they are not part of")
+        answer=self.request.get("answer")
+        message={"request":"reply","answer":answer}
+        if answer=="yes":
+            channel.send_message(gm.playerO.nickname(),simplejson.dumps(message))
+            gm.started=True
+            gm.lastTurn=now()
+        if answer=="no":
+            channel.send_message(gm.playerO.nickname(),simplejson.dumps(message))
+            db.delete(gm)
     
     def get(self):
         """for players checking the opponent is online"""

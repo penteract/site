@@ -14,24 +14,37 @@
 
 
 <body>
-<div id="top">
-Welcome to my website where you can play 3D noughts and crosses
+<div id="top" style="position:relative;">
+<span>Hello {{name}}</span>
+<span style="position:absolute;right:5px;top:5px;">({{score}})</span>
 </div>
 
-<div id="players" style="float:left;width:200px;">
+<div id="players" style="float:left;width:20%;min-width:6em;">
+<strong>Players</strong><br>
   {% for player in players %}
-    <a href="/newGame?player={{player.id}}">{{player.name}} ({{player.score}})</a><br>
+    <a href="/newGame?player={{player.id}}">{{player.name}}</a> ({{player.score}})<br>
   {%endfor%}
 </div>
   
-<div id="main">
-
-<input type="text" id="name" value="{{name}}"></input>
+<div id="main" style="width:45%;">
+<strong>Games</strong><br>
+  {% if not games %}
+    you are not currently playing any games<br>
+  {% endif %}
+  {% for game in games %}
+    <a href="/game?game={{game.id}}">{{game.op}}</a><br>
+  {%endfor%}
+  <br>
+<input type="text" id="name" value="{{name}}" style="width:6em"></input> 
 <input type="button" onclick="send();" value="change name"></input>
 
   <div id="links">
     <a href="{{logouturl}}">logout</a>
   </div>
+</div>
+
+<div id="side">
+From this page, you can start games with other players and see games you are currently playing
 </div>
 
 <script>
