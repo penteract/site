@@ -1,0 +1,14 @@
+body {background-color:#FFFFFF;
+	font-family:calibri,sans-serif;}
+
+#top {background-color:lightblue;
+	font-size:20pt;
+	font-family:"Bell MT",serif;}
+
+#main {float:left;}
+
+#side {background-color:green;
+	color:orange;
+	width:400px;
+	float:right;
+	font-family:calibri,sans-serif;}

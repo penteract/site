@@ -78,14 +78,16 @@ function click(pos,player){
 $.ajaxSetup({cache:false});
 
 </script>
+
+<link rel="stylesheet" type="text/css" href="styles.css">
 </head>
 <body>
 
 
-<div id="top" style="background-color:lightblue;font-size:20pt">
+<div id="top">
   Welcome to my webpage where you can play 3D noughts and crosses
 </div>
-<div id="main" style="background-color:#FFFFFF;float:left;">
+<div id="main">
   <div id="controls">
     <input type="text" id="player" value="X"></input>
     <input type="button" onclick="$.post('clr',{'gameID':gameID});"></input>
@@ -282,15 +284,9 @@ $(document).ready(function(){
     }, 10);
   });
 
-var rmb=false
-
-
-Canvas.onmousedown=function(e){if(e.button==2){rmb=true}};
-Canvas.onmouseup=function(e){
-  if(e.button==2){rmb=false}};
-Canvas.onmousemove=function(e){if(rmb){
-    avp+=(e.MovementY||e.webkitMovementY||e.mozMovementY||0)*SENSITIVITY;
-    avy+=(e.MovementX||e.webkitMovementX||e.mozMovementX||0)*SENSITIVITY;
+Canvas.onmousemove=function(e){if(e.buttons&&2){
+    avp+=(e.movementY||e.webkitMovementY||e.mozMovementY||0)*SENSITIVITY;
+    avy+=(e.movementX||e.webkitMovementX||e.mozMovementX||0)*SENSITIVITY;
     draw();vv=e;}
   };
 Canvas.oncontextmenu=function(e){return false;};
@@ -305,7 +301,7 @@ Canvas.oncontextmenu=function(e){return false;};
   </div>
 </div>
 
-<div id="rules" style="background-color:green;color:orange;width:400px;float:right;">
+<div id="side">
   This layout does not currently let you make moves.<br>
   If you right-click and drag, the cube spins<br>
   Works in chrome and firefox, if you arn't using chrome, parameters should be between 0 and 100

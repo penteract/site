@@ -1,5 +1,5 @@
 application: 3d-o-x
-version: alpha
+version: chtest
 runtime: python27
 api_version: 1
 threadsafe: true
@@ -8,6 +8,14 @@ handlers:
 - url: /favicon\.ico
   static_files: favicon.ico
   upload: favicon\.ico
+  
+- url: /channel\.js
+  static_files: channel.js
+  upload: /channel\.js
+  
+- url: /styles\.css
+  static_files: styles.css
+  upload: /styles\.css
   
 - url: /.*
   script: main.app

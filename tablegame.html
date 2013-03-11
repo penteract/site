@@ -68,14 +68,15 @@ function show(data){
   }
 
 $.ajaxSetup({cache:false});
-
 </script>
+
+<link rel="stylesheet" type="text/css" href="styles.css">
 </head>
 <body>
-<div id="top" style="background-color:lightblue;font-size:20pt">
+<div id="top">
 Welcome to my webpage where you can play 3D noughts and crosses
 </div>
-<div id="main" style="background-color:#FFFFFF;float:left;">
+<div id="main">
   <div id="controls">
     <input type="text" id="player" value="X"></input>
     <input type="button" onclick="$.post('clr',{'gameID':gameID});"></input>
@@ -103,7 +104,7 @@ Welcome to my webpage where you can play 3D noughts and crosses
   </div>
 </div>
 
-<div id="rules" style="background-color:green;color:orange;width:400px;float:right;">
+<div id="side">
 The cells represent 4 layers in a 4*4*4 cube. To win get four cells that form a line in the cube.<br>
 Click on a cell to make your move there.<br>
 <br>

@@ -3,17 +3,20 @@
 import os
 import datetime
 
-from google.appengine.ext import webapp
+from google.appengine.ext import webapp,db
 from google.appengine.ext.webapp import util
+from google.appengine.api import channel,users
 from django.utils import simplejson
-from google.appengine.ext import db
-from google.appengine.api import channel
-from random import randrange
 import jinja2
+from time import clock
+from datetime import datetime
+from random import randrange
 
 jinja_environment = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
 
+
+#error handling
 class show(Exception):
     def __init__(self,s):
         self.s=s
@@ -32,37 +35,211 @@ def check(a,b,msg):
     """raises an error if inputs are not equal"""
     if a!=b:raise InvalidInput(a,b,msg)
 
+
+
 class GameData(db.Model):
     turn=db.StringProperty()#"O" or "X"
     winpos=db.StringProperty()#"" or "xyz"
     board=db.StringProperty()#" ","O" or "X" 64 times
-    viewers=db.ListProperty(str)
+    TimeCreated = db.DateTimeProperty(auto_now_add=True)
+    PlayerX=db.UserProperty()
+    PlayerO=db.UserProperty()
+    TimeLimit=db.DateTimeProperty()
+    LastTurn=db.DateTimeProperty()
+    Started=db.BooleanProperty()
   
 def game_key(gameNum):
-    """Constructs a Datastore key for a Start entity with a given id."""
+    """Constructs a Datastore key for a GameData entity with a given id."""
     return db.Key.from_path('GameData',gameNum)
+
+class PlayerData(db.Model):
+    account=db.UserProperty()
+    token=db.StringProperty()
+    username=db.StringProperty()
+    score=db.IntegerProperty()
+    lastOnline =db.DateTimeProperty()
+    Online=db.BooleanProperty()#if False, definitely not online
+    dateJoined = db.DateTimeProperty(auto_now_add=True)
+    
+def getPlayer(nickname):
+    return PlayerData.get(db.Key.from_path('PlayerData',str(hash(nickname))))
     
 @db.transactional
-def addViewer(gameID,viewerID):
-    """adds a viewer to the game's list of viewers and sends the viewer the current game state"""
-    gm=GameData.get(game_key(gameID))
-    if viewerID not in gm.viewers:
-        gm.viewers.append(viewerID+gameID);
-        gm.put()
-    channel.send_message(viewerID+gameID,simplejson.dumps(Game(gm).getData()))
+def getCurrentPlayer():
+    """gets the Entity for the player currently logged in and redirects them if necessary"""
+    user = users.get_current_user()
+    if not user:
+        return None
+    pl=getPlayer(user.nickname())
+    if not pl:
+        return None
+    pl.lastOnline=datetime.now()
+    pl.Online=True
+    pl.put()
+    return pl
+
     
-    
-    
-class MainPage(webapp.RequestHandler):
-    """ Renders the main template."""
+class WelcomePage(webapp.RequestHandler):
+    """for users who have not logged in yet"""
     def get(self):
+        user = users.get_current_user()
+        if user:
+            self.redirect("/user")
+        else:
+            template_values = {"user":None,
+                               "loginurl":users.create_login_url(self.request.uri)}
+            template = jinja_environment.get_template('welcome.html')
+            self.response.out.write(template.render(template_values))
+        
+class UserPage(webapp.RequestHandler):
+    """shows a user's homepage where they can continue games and start new ones"""
+    def get(self):
+        user = users.get_current_user()
+        if not user:
+            self.redirect("/")
+            return None
+        pl=getPlayer(user.nickname())
+        if pl==None:#create a new user
+            pl=PlayerData(key_name=str(hash(user.nickname())))
+            pl.account=user
+            pl.score=1000
+            pl.token=channel.create_channel(user.nickname())
+            pl.username="usert"
+        pl.lastonline=datetime.now()
+        pl.Online=True
+        pl.put()
+        players=db.GqlQuery("SELECT * "
+                        "FROM PlayerData "
+                        "ORDER BY lastOnline DESC LIMIT 10")
+        players=[{"id":hash(p.account.nickname()),"name":p.username,"score":p.score} for p in players]
+        template_values = {"name":pl.username,
+                           "score":pl.score,
+                           "logouturl":users.create_logout_url(self.request.uri),
+                           "chtoken":pl.token,
+                           "players":players}
+        template = jinja_environment.get_template('user.html')
+        self.response.out.write(template.render(template_values))
+
+class ChangeName(webapp.RequestHandler):
+    """changes a user's name"""
+    @db.transactional
+    def post(self):
+        pl=getCurrentPlayer()
+        if not pl: return None
+        pl.username=self.request.get("name")
+        pl.put()
+
+class ChannelCreator(webapp.RequestHandler):
+    """creates a new token when the old one runs out - susceptible to abuse"""
+    @db.transactional
+    def post(self):
+        pl=getCurrentPlayer()
+        if not pl: return None
+        pl.token=channel.create_channel(pl.account.nickname())
+        pl.put()
+        self.response.out.write(pl.token)
+
+
+
+class NewGame(webapp.RequestHandler):
+    """handles a request by one player to start a game with another"""
+    def get(self):
+        """returns a page where the user can select options for the game they want to start"""
+        pl=getCurrentPlayer()
+        if not pl:
+            self.redirect("/")
+            return None
+        opponent=self.request.get("player")
+        op=PlayerData.get(db.Key.from_path('PlayerData',opponent))
+        if not op:
+            self.redirect("/user?opponentnotfound=true")
+            return None
+        if not op.Online:
+            self.redirect("/user?opponentnotonline=true")
+            return None
+        template_values = {"name":pl.username,
+                           "chtoken":pl.token,
+                           "opponent":{"name":op.username,"id":hash(op.account.nickname()),"score":op.score}
+                           }
+        template = jinja_environment.get_template('offer.html')
+        self.response.out.write(template.render(template_values))
+        
+        
+    @db.transactional(xg=True)
+    def post(self):
+        """notifies the other player to see if they want to start the game (and to check if they are online)"""
+        pl=getCurrentPlayer()
+        if not pl:
+            self.redirect("/")
+            return None
+        opponent=self.request.get("opponent")
+        #check the opponent
+        op=PlayerData.get(db.Key.from_path('PlayerData',opponent))
+        if (not op) or not op.Online:
+            self.response.out.write("not online")
+            return None
+        
+        #create the game Entity
+        time=int(self.request.get("time"))
+        assert time in range(6)
+        times=[60,120,300,600,24*3600,7*24*3600]
+        seconds=times[time]
+        gm=True
+        while gm:
+            gmNum=str(randrange(100000000))
+            gm=GameData.get(game_key(gmNum))
+        gm=GameData(key_name=gmNum)
+        gm.turn="X"
+        gm.board=" "*64
+        gm.winpos=""
+        gm.started=False
+        gm.playerO=pl.account
+        gm.playerX=op.account
+        gm.put()
+        
+        #tell the opponent
+        op.Online=False
+        op.put()
+        message={"request":"NewGame",
+                 "player":pl.username+" ("+str(pl.score)+")",
+                 "gameID":gmNum}
+        channel.send_message(op.account.nickname(),simplejson.dumps(message))
+        self.response.out.write(gmNum)
+        
+        
+class Response(webapp.RequestHandler):
+    """handles the response to a game request"""
+    def post(self):
+        pl=getCurrentPlayer()
+        if not pl:return None
+    
+    def get(self):
+        """for players checking the opponent is online"""
+        gmNum=self.request.get("gameID")
+        gm=GameData.get(game_key(gmNum))
+        if not gm:
+            self.response.out.write("no")
+            return None
+        opName=gm.playerX.nickname()
+        op=getPlayer(opName)
+        if not op or not op.Online:
+            self.response.out.write("no")
+        else:
+            self.response.out.write("yes")
+        
+
+class GamePage(webapp.RequestHandler):
+    """ Shows a page on which a game can be played"""
+    def get(self):
+        #make sure that the user is logged in
+        user = users.get_current_user()
+        if not user:
+            self.redirect("/")
+            return None
         #set up the game if necessary
         gmNum=self.request.get('gameID')
-        plNum=self.request.get('viewerID')
         if gmNum=="":
             gmNum="5"
-        if plNum=="":
-            plNum="5"
         gameID = game_key(gmNum)
         gm=GameData.get(gameID)
         #if someone else creates a game with the same key at this point it will be overwritten, but that shouldn't matter because they would both be identical (empty) - it might matter as user ID's get added
@@ -85,24 +262,37 @@ class MainPage(webapp.RequestHandler):
                            "chtoken":token}
         pageType=self.request.get('pageType')
         if pageType=="" or pageType=="table":
-            template = jinja_environment.get_template('tablegame.html')
+            file='tablegame.html'
         if pageType=="canvas":
-            template = jinja_environment.get_template('canvasgame.html')
+            file='canvasgame.html'
         if pageType=="threeD":
-            template = jinja_environment.get_template('3Dgame.html')
-        self.response.out.write(template.render(template_values))
+            file='3Dgame.html'
+        self.response.out.write(jinja_environment.get_template(file).render(template_values))
 
 
+#togo?
 class AddView(webapp.RequestHandler):
     """adds a viewer to the game when the client's javascript opens the channel"""
-    def post(self):
+    def get(self):
         gameID = self.request.get('gameID')
         vID=self.request.get('viewerID')
         addViewer(gameID,vID)
 
+@db.transactional
+def addViewer(gameID,viewerID):
+    """adds a viewer to the game's list of viewers and sends the viewer the current game state"""
+    gm=GameData.get(game_key(gameID))
+    if viewerID not in gm.viewers:
+        gm.viewers.append(viewerID+gameID);
+        gm.put()
+    channel.send_message(viewerID+gameID,simplejson.dumps(Game(gm).getData()))
+
+
 
 class AjaxHandler(webapp.RequestHandler):
     """handles turns sent and polls for new data"""
+    
+    #togo
     def get(self):
         gameID = game_key(self.request.get('gameID'))
         gm=GameData.get(gameID)
@@ -128,21 +318,7 @@ class AjaxHandler(webapp.RequestHandler):
             channel.send_message(viewer,simplejson.dumps(game.getData()))
         data={"error":"none"}
         self.response.out.write(simplejson.dumps(data))
-        
-class NewGame(webapp.RequestHandler):
-    """ produces an id for a new game"""
-    def post(self):
-        gameID = game_key(self.request.get('gameID'))
-        gm=GameData(key=gameID)
-        gm.turn="X"
-        gm.board=" "*64
-        gm.winpos=""
-        gm.put()
-        
-class Clear(webapp.RequestHandler):
-    """clear all game data"""
-    def get(self):
-        db.delete(GameData.all(keys_only=True).run())
+
 
 class Game():
     def __init__(self,gmData):
@@ -225,13 +401,27 @@ class Game():
                 lines[-1][0].append(bd[n][n if y==z else 3-n][n if z==x else 3-n])
                 lines[-1][1].append([n if z==x else 3-n,n if y==z else 3-n,n])
         return lines
+        
 
+class Clear(webapp.RequestHandler):
+    """clear all game data"""
+    def get(self):
+        db.delete(PlayerData.all(keys_only=True).run())
+
+        
 app = webapp.WSGIApplication([
+    ('/', WelcomePage),
+    ('/user', UserPage),
+    ('/changeName', ChangeName),
+    ('/newChannel', ChannelCreator),
+    ('/newGame', NewGame),
+    ('/respond', Response),
+    ('/checkRequest', Response),
+    ('/game', GamePage),
     ('/post', AjaxHandler),
     ('/get', AjaxHandler),
-    ('/clr', NewGame),
+    #('/clr', NewGame),
     ('/add', AddView),
     #('/clrall', Clear),
-    ('/', MainPage),
      ], debug=True)
         

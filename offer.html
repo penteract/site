@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>3DOX</title>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
+<script type="text/javascript" src="/_ah/channel/jsapi"></script>
+<script type="text/javascript" src="/channel.js"></script>
+
+<script>$.ajaxSetup({cache:false});</script>
+
+<link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+
+
+<body>
+<div id="top">
+Select options to start a game against {{opponent.name}} ({{opponent.score}})
+</div>
+  
+<div id="main">
+<form name="GameOptions">
+maximum turn length
+<select name="turnLength">
+  <option>1 min</option>
+  <option>2 mins</option>
+  <option>5 mins</option>
+  <option>10 mins</option>
+  <option>1 day</option>
+  <option>7 days</option>
+</select><br>
+<input type="button" onclick="send();" value="start game"></input>
+</form>
+
+  <div id="links">
+    <a href="/user">Main page</a>
+  </div>
+</div>
+
+<div id="side">
+on this page, select the options for the game you want to start
+</div>
+
+<script>
+function send() {
+  $.post('newGame',
+        {time:document.GameOptions.turnLength.selectedIndex,opponent:{{opponent.id}}},
+        function(m){
+          if(m=="not online"){
+            alert("the user is not online");
+            location.pathname="/user";
+          }
+          else setTimeout(function(){
+            $.get("check",{gameID:m}
+                  function(m2){
+                    if(m2=="no"){
+                      alert("the user is not online");
+                      location.pathname="/user";
+                    }
+                  })
+          },1000);
+        });
+}
+function process(m) {console.log(m.data);}
+setup("{{chtoken}}",process);
+</script>
+</body>
+
+</html>

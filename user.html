@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>3DOX</title>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
+<script type="text/javascript" src="/_ah/channel/jsapi"></script>
+<script type="text/javascript" src="/channel.js"></script>
+
+<script>$.ajaxSetup({cache:false});</script>
+
+<link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+
+
+<body>
+<div id="top">
+Welcome to my website where you can play 3D noughts and crosses
+</div>
+
+<div id="players" style="float:left;width:200px;">
+  {% for player in players %}
+    <a href="/newGame?player={{player.id}}">{{player.name}} ({{player.score}})</a><br>
+  {%endfor%}
+</div>
+  
+<div id="main">
+
+<input type="text" id="name" value="{{name}}"></input>
+<input type="button" onclick="send();" value="change name"></input>
+
+  <div id="links">
+    <a href="{{logouturl}}">logout</a>
+  </div>
+</div>
+
+<script>
+function send() {$.post('changeName',{name:$('#name').val()});}
+function process(m) {console.log(m.data);}
+setup("{{chtoken}}",process);
+</script>
+</body>
+
+</html>
