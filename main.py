@@ -44,7 +44,7 @@ class GameData(db.Model):
     timeCreated = db.DateTimeProperty(auto_now_add=True)
     playerX=db.UserProperty()
     playerO=db.UserProperty()
-    timeLimit=db.DateTimeProperty()
+    timeLimit=db.IntegerProperty()
     lastTurn=db.DateTimeProperty()
     started=db.BooleanProperty()
   
@@ -74,7 +74,7 @@ def getCurrentPlayer():
     if not pl:
         return None
     pl.lastOnline=datetime.now()
-    pl.Online=True
+    pl.online=True
     pl.put()
     return pl
 
@@ -106,12 +106,13 @@ class UserPage(webapp.RequestHandler):
             pl.token=channel.create_channel(user.nickname())
             pl.username="usert"
         pl.lastonline=datetime.now()
-        pl.Online=True
+        pl.online=True
         pl.put()
         players=db.GqlQuery("SELECT * "
                         "FROM PlayerData "
                         "ORDER BY lastOnline DESC LIMIT 10")
         players=[{"id":hash(p.account.nickname()),"name":p.username,"score":p.score} for p in players]
+        #todo - add games to be shown
         template_values = {"name":pl.username,
                            "score":pl.score,
                            "logouturl":users.create_logout_url(self.request.uri),
@@ -158,7 +159,7 @@ class NewGame(webapp.RequestHandler):
         if not op:
             self.redirect("/user?opponentnotfound=true")
             return None
-        if not op.Online:
+        if not op.online:
             self.redirect("/user?opponentnotonline=true")
             return None
         template_values = {"name":pl.username,
@@ -180,7 +181,7 @@ class NewGame(webapp.RequestHandler):
         opponent=self.request.get("opponent")
         #check the opponent
         op=PlayerData.get(db.Key.from_path('PlayerData',opponent))
-        if (not op) or not op.Online:
+        if (not op) or not op.online:
             self.response.out.write("not online")
             return None
         
@@ -204,7 +205,7 @@ class NewGame(webapp.RequestHandler):
         gm.put()
         
         #tell the opponent
-        op.Online=False
+        op.online=False
         op.put()
         message={"request":"NewGame",
                  "player":pl.username+" ("+str(pl.score)+")",
@@ -223,7 +224,7 @@ class Response(webapp.RequestHandler):
         if not pl:return None
         gmNum=self.request.get("gameID")
         gm=GameData.get(game_key(gmNum))
-        if not gm or gm.Started:
+        if not gm or gm.started:
             self.response.out.write("no")
             return None
         check(pl.account,gm.playerX,"player replying to a game which they are not part of")
@@ -232,7 +233,8 @@ class Response(webapp.RequestHandler):
         if answer=="yes":
             channel.send_message(gm.playerO.nickname(),simplejson.dumps(message))
             gm.started=True
-            gm.lastTurn=now()
+            gm.lastTurn=datetime.now()
+            gm.put()
         if answer=="no":
             channel.send_message(gm.playerO.nickname(),simplejson.dumps(message))
             db.delete(gm)
@@ -246,8 +248,9 @@ class Response(webapp.RequestHandler):
             return None
         opName=gm.playerX.nickname()
         op=getPlayer(opName)
-        if not op or not op.Online:
+        if not op or not op.online:
             self.response.out.write("no")
+            db.delete(gm)
         else:
             self.response.out.write("yes")
         
@@ -276,13 +279,12 @@ class GamePage(webapp.RequestHandler):
             gm.put()
         
         #create the token
-        token=channel.create_channel(plNum + gmNum)
+        token=channel.create_channel(user.nickname())
         
         #show the page
         #doesn't always show the board, may be a problem with caching
         template_values = {"gameID":gmNum,
                            "board":gm.board,
-                           "viewerID":plNum,
                            "chtoken":token}
         pageType=self.request.get('pageType')
         if pageType=="" or pageType=="table":

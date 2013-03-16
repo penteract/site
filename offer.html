@@ -41,6 +41,12 @@ maximum turn length
 on this page, select the options for the game you want to start
 </div>
 
+<div id="offer" style="position:fixed;bottom:10px;right:5px;width:20%;min-width:7em">
+do <br>
+<input type="button" onclick='$.post("respond",{answer:"yes",gameID:message.gameID});$("#offer").hide();' value="yes"></input>
+<input type="button" onclick='$.post("respond",{answer:"no",gameID:message.gameID});$("#offer").hide();' value="no"></input>
+</div>
+
 <script>
 function send() {
   $.post('newGame',
@@ -50,19 +56,33 @@ function send() {
             alert("the user is not online");
             location.pathname="/user";
           }
-          else setTimeout(function(){
-            $.get("check",{gameID:m}
-                  function(m2){
-                    if(m2=="no"){
-                      alert("the user is not online");
-                      location.pathname="/user";
-                    }
-                  })
-          },1000);
+          else {
+            setTimeout(function(){
+              $.get("checkRequest",{gameID:m},
+                    function(m2){
+                      if(m2=="no"){
+                        alert("the user is not online");
+                        location.pathname="/user";
+                      }
+                    });
+              },1000);
+            gameID=m;
+          }
         });
 }
-function process(m) {console.log(m.data);}
-setup("{{chtoken}}",process);
+function process(m) {//used in channel.js
+  if (m.request="reply"){
+    if(m.answer=="no"){
+      alert("sorry, they don't want to play right now");
+      location.pathname="/user";
+    }
+    else if(m.answer=="yes"){
+      alert("/game?gameID="+gameID)
+      location.replace("/game?gameID="+gameID);
+    }
+  }
+}
+setup("{{chtoken}}");
 </script>
 </body>
 

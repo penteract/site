@@ -26,7 +26,7 @@
   {%endfor%}
 </div>
   
-<div id="main" style="width:45%;">
+<div id="main" style="width:45%;min-width:12em">
 <strong>Games</strong><br>
   {% if not games %}
     you are not currently playing any games<br>
@@ -47,11 +47,18 @@
 From this page, you can start games with other players and see games you are currently playing
 </div>
 
+<div id="offer" style="position:fixed;bottom:10px;right:5px;">
+do <br>
+<input type="button" onclick='$.post("respond",{answer:"yes",gameID:message.gameID});$("#offer").hide();' value="yes"></input>
+<input type="button" onclick='$.post("respond",{answer:"no",gameID:message.gameID});$("#offer").hide();' value="no"></input>
+</div>
+
 <script>
 function send() {$.post('changeName',{name:$('#name').val()});}
-function process(m) {console.log(m.data);}
-setup("{{chtoken}}",process);
+function proces(m) {console.log(m.data);}
+setup("{{chtoken}}");
 </script>
+
 </body>
 
 </html>
