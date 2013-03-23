@@ -21,8 +21,8 @@ border-style: solid;
 }
 .sub td
 {
-width: 20px;
-height: 20px;
+width: 2em;
+height: 2em;
 border-width: 2px 2px 0 0;
 border-style: solid;
 border-color: black;
@@ -43,12 +43,12 @@ background-color: red;
 <title>3DOX</title>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
 <script type="text/javascript" src="/_ah/channel/jsapi"></script>
+<script type="text/javascript" src="/staticfiles/channel.js"></script>
 
 <script>
-var viewerID={{viewerID}};
-var gameID={{gameID}};
+var gameID='{{gameID}}';
 
-function postMsg(data){$("#error").val(data.error);}
+function postMsg(data){if (data!="none") alert(data);}
 
 function show(data){
   for(z=0;z<4;z++){
@@ -70,7 +70,7 @@ function show(data){
 $.ajaxSetup({cache:false});
 </script>
 
-<link rel="stylesheet" type="text/css" href="styles.css">
+<link rel="stylesheet" type="text/css" href="/staticfiles/styles.css">
 </head>
 <body>
 <div id="top">
@@ -78,9 +78,7 @@ Welcome to my webpage where you can play 3D noughts and crosses
 </div>
 <div id="main">
   <div id="controls">
-    <input type="text" id="player" value="X"></input>
     <input type="button" onclick="$.post('clr',{'gameID':gameID});"></input>
-    <input type="text" id="error" value="" disabled="disabled"></input>
   </div>
   
   <div id="game">
@@ -90,7 +88,7 @@ Welcome to my webpage where you can play 3D noughts and crosses
       {% for y in range(4) %}
         <tr>
         {% for x in range(4) %}
-          <td id={{ "t"~x~y~z }} class=won ><p id={{ "p"~x~y~z }} class=in-cell>{{board[z*16+y*4+x]}}</p></td>
+          <td id={{ "t"~x~y~z }}><p id={{ "p"~x~y~z }} class=in-cell>{{board[z*16+y*4+x]}}</p></td>
         {% endfor %}
         </tr>
       {% endfor %}
@@ -110,32 +108,33 @@ Click on a cell to make your move there.<br>
 <br>
 At the moment this is a very early version so you can change your counter by replacing the "X" in the text box with an "O", and reset the board by pressing the button next to it.
 </div>
+<div id="offer" style="position:fixed;bottom:10px;right:5px;width:20%;min-width:7em">
+</div>
 
 <script>
 //functions independent of IO
-function click(pos,player){
-  $.post('post?pos='+pos+'&gameID='+gameID+'&player='+player,
-  postMsg,'json')
+function click(pos){
+  $.post('makeMove?pos='+pos+'&gameID='+gameID,
+  postMsg)
   }
 
+  
+function process(m){
+  if (m.request=="gameUpdate"){
+    if(m.gameID=gameID){
+      show(m);
+    }
+  }
+}
 
 //set up channel
-channel = new goog.appengine.Channel('{{ chtoken }}');
-socket = channel.open();
-socket.onmessage = function(m){show(JSON.parse(m.data));};
-socket.onopen = function(){$.post('add',{'gameID':gameID,'viewerID':viewerID});};
-/*socket.onerror = onError;
-socket.onclose = onClose;*/
+openChannel('{{ chtoken }}');
 
 //end of functions independent of IO
 
 $(".sub td").click(function(){
-  var player=$("#player").val()
-  if (player=="X" || player=="O"){
-    click($(this).attr("id").substr(1),player)
-    }
+  click($(this).attr("id").substr(1));
   });
-$("#error").val("none")
 </script>
 
 </body>

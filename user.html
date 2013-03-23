@@ -5,11 +5,11 @@
 <title>3DOX</title>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
 <script type="text/javascript" src="/_ah/channel/jsapi"></script>
-<script type="text/javascript" src="/channel.js"></script>
+<script type="text/javascript" src="/staticfiles/channel.js"></script>
 
 <script>$.ajaxSetup({cache:false});</script>
 
-<link rel="stylesheet" type="text/css" href="styles.css">
+<link rel="stylesheet" type="text/css" href="/staticfiles/styles.css">
 </head>
 
 
@@ -32,7 +32,7 @@
     you are not currently playing any games<br>
   {% endif %}
   {% for game in games %}
-    <a href="/game?game={{game.id}}">{{game.op}}</a><br>
+    <a href="/game?gameID={{game.id}}">{{game.X}} vs {{game.O}}</a><br>
   {%endfor%}
   <br>
 <input type="text" id="name" value="{{name}}" style="width:6em"></input> 
@@ -47,10 +47,7 @@
 From this page, you can start games with other players and see games you are currently playing
 </div>
 
-<div id="offer" style="position:fixed;bottom:10px;right:5px;">
-do <br>
-<input type="button" onclick='$.post("respond",{answer:"yes",gameID:message.gameID});$("#offer").hide();' value="yes"></input>
-<input type="button" onclick='$.post("respond",{answer:"no",gameID:message.gameID});$("#offer").hide();' value="no"></input>
+<div id="offer" style="position:fixed;bottom:10px;right:5px;width:20%;min-width:7em">
 </div>
 
 <script>

@@ -29,7 +29,7 @@ class InvalidInput(Exception):
         self.excpected=excpected
         self.msg=msg
     def __str__(self):
-        return "excpected: "+self.excpected+"\nbut recieved"+repr(self.input)
+        return "excpected: "+repr(self.excpected)+"\nbut recieved"+repr(self.input)
         
 def check(a,b,msg):
     """raises an error if inputs are not equal"""
@@ -50,7 +50,9 @@ class GameData(db.Model):
   
 def game_key(gameNum):
     """Constructs a Datastore key for a GameData entity with a given id."""
-    return db.Key.from_path('GameData',gameNum)
+    if all([c in "1234567890" for c in gameNum]):
+        return db.Key.from_path('GameData',gameNum)
+    else: return gameNum
 
 class PlayerData(db.Model):
     account=db.UserProperty()
@@ -63,6 +65,14 @@ class PlayerData(db.Model):
     
 def getPlayer(nickname):
     return PlayerData.get(db.Key.from_path('PlayerData',str(hash(nickname))))
+    
+@db.transactional
+def playerName(nickname,em=False):
+    p=getPlayer(nickname)
+    if not p:return None
+    ret=p.username
+    if em:ret="<em>"+ret+"</em>"
+    return ret
     
 @db.transactional
 def getCurrentPlayer():
@@ -110,14 +120,30 @@ class UserPage(webapp.RequestHandler):
         pl.put()
         players=db.GqlQuery("SELECT * "
                         "FROM PlayerData "
+                        "WHERE online = TRUE "
                         "ORDER BY lastOnline DESC LIMIT 10")
         players=[{"id":hash(p.account.nickname()),"name":p.username,"score":p.score} for p in players]
-        #todo - add games to be shown
+        
+        gamesX=db.GqlQuery("SELECT playerO, turn FROM GameData WHERE playerX = :1",pl.account)
+                        
+        games=[{"id":game.key().id_or_name(),
+                "O":playerName(game.playerO.nickname(),game.turn=="O"),
+                "X":playerName(pl.account.nickname(),game.turn=="X")}
+               for game in gamesX]
+            
+        gamesO=db.GqlQuery("SELECT playerX, turn FROM GameData WHERE playerO = :1",pl.account)
+       
+        games+=[{"id":game.key().id_or_name(),
+                "O":playerName(pl.account.nickname(),game.turn=="O"),
+                "X":playerName(game.playerX.nickname(),game.turn=="X")}
+               for game in gamesO]
+        
         template_values = {"name":pl.username,
                            "score":pl.score,
                            "logouturl":users.create_logout_url(self.request.uri),
                            "chtoken":pl.token,
-                           "players":players}
+                           "players":players,
+                           "games":games}
         template = jinja_environment.get_template('user.html')
         self.response.out.write(template.render(template_values))
 
@@ -250,100 +276,67 @@ class Response(webapp.RequestHandler):
         op=getPlayer(opName)
         if not op or not op.online:
             self.response.out.write("no")
-            db.delete(gm)
         else:
             self.response.out.write("yes")
         
 
 class GamePage(webapp.RequestHandler):
-    """ Shows a page on which a game can be played"""
     def get(self):
+        """ Shows a page on which a game can be played"""
         #make sure that the user is logged in
-        user = users.get_current_user()
-        if not user:
+        pl = getCurrentPlayer()
+        if not pl:
             self.redirect("/")
             return None
-        #set up the game if necessary
         gmNum=self.request.get('gameID')
-        if gmNum=="":
-            gmNum="5"
         gameID = game_key(gmNum)
         gm=GameData.get(gameID)
-        #if someone else creates a game with the same key at this point it will be overwritten, but that shouldn't matter because they would both be identical (empty) - it might matter as user ID's get added
-        if gm==None:
-            gm=GameData(key_name=gmNum)
-            gm.turn="X"
-            gm.board=" "*64
-            gm.winpos=""
-            gm.viewers=[]
-            gm.put()
-        
-        #create the token
-        token=channel.create_channel(user.nickname())
+        if not gm:
+            self.redirect("/")
+            return None
         
         #show the page
-        #doesn't always show the board, may be a problem with caching
         template_values = {"gameID":gmNum,
                            "board":gm.board,
-                           "chtoken":token}
+                           "chtoken":pl.token}
         pageType=self.request.get('pageType')
+        file=""
         if pageType=="" or pageType=="table":
             file='tablegame.html'
-        if pageType=="canvas":
-            file='canvasgame.html'
-        if pageType=="threeD":
-            file='3Dgame.html'
-        self.response.out.write(jinja_environment.get_template(file).render(template_values))
-
-
-#togo?
-class AddView(webapp.RequestHandler):
-    """adds a viewer to the game when the client's javascript opens the channel"""
-    def get(self):
-        gameID = self.request.get('gameID')
-        vID=self.request.get('viewerID')
-        addViewer(gameID,vID)
-
-@db.transactional
-def addViewer(gameID,viewerID):
-    """adds a viewer to the game's list of viewers and sends the viewer the current game state"""
-    gm=GameData.get(game_key(gameID))
-    if viewerID not in gm.viewers:
-        gm.viewers.append(viewerID+gameID);
-        gm.put()
-    channel.send_message(viewerID+gameID,simplejson.dumps(Game(gm).getData()))
-
-
-
-class AjaxHandler(webapp.RequestHandler):
-    """handles turns sent and polls for new data"""
+        #if pageType=="canvas":
+        #    file='canvasgame.html'
+        #if pageType=="threeD":
+        #    file='3Dgame.html'
+        if file: self.response.out.write(jinja_environment.get_template(file).render(template_values))
     
-    #togo
-    def get(self):
-        gameID = game_key(self.request.get('gameID'))
-        gm=GameData.get(gameID)
-        game=Game(gm)
-        self.response.out.write(simplejson.dumps(game.getData()))
-
-    @db.transactional
+    @db.transactional(xg=True)
     def post(self):
-        pos = self.request.get('pos')
-        x,y,z=(int(c) for c in pos)
-        player = self.request.get('player')
-        gameID = game_key(self.request.get('gameID'))
+        
+        pl = getCurrentPlayer()
+        if not pl:
+            return None
+        gmNum=self.request.get('gameID')
+        gameID = game_key(gmNum)
         gm=GameData.get(gameID)
+        if not gm:
+            return None
         game=Game(gm)
+            
+        pos = self.request.get('pos')
+        if not pos:
+            self.response.out.write("error")
+            return None
+        x,y,z=(int(c) for c in pos)
         pos=16*z+4*y+x
-        try: game.go(player,x,y,z)
+        try: game.go(pl,x,y,z)
         except InvalidInput as e:
-            self.response.out.write(simplejson.dumps({"error":e.msg}))
+            self.response.out.write(e.msg)
             return None
         game.sync(gm)
         gm.put()
-        for viewer in gm.viewers:
-            channel.send_message(viewer,simplejson.dumps(game.getData()))
-        data={"error":"none"}
-        self.response.out.write(simplejson.dumps(data))
+        for player in [gm.playerX,gm.playerO]:
+            channel.send_message(player.nickname(),simplejson.dumps(game.getData()))
+        self.response.out.write("none")
 
 
 class Game():
@@ -356,6 +349,7 @@ class Game():
                 l[-1].append([])
                 for x in range(4):
                     l[-1][-1].append(bd[z*16+y*4+x])
+        self.players={"O":gmData.playerO,"X":gmData.playerX}
         self.board=l
         self.turn=gmData.turn
         self.winpos=gmData.winpos
@@ -370,18 +364,18 @@ class Game():
             
         
     def getData(self):
-        d={}
+        d={"request":"gameUpdate"}
         d["board"]="".join(["".join(["".join(y) for y in z]) for z in self.board])
         d["wonlines"]=self.wonlines
         return d
         
     def go(self,player,x,y,z):
-        check(self.wonlines,[],"game's over")
-        check(player,self.turn,"it is not your turn")
+        check(self.winpos,"","game's over")
+        check(player.account,self.players[self.turn],"it is not your turn")
         check(self.board[z][y][x]," ","you must go in an empty cell")
-        self.board[z][y][x]=player
+        self.board[z][y][x]=self.turn
         for line in self.linesThrough(x,y,z):
-            if all([p==player for p in line[0]]):
+            if all([p==self.turn for p in line[0]]):
                 self.wonlines.append(line[1])
         if self.wonlines: self.winpos=str(x)+str(y)+str(z)
         self.turn={"X":"O","O":"X"}[self.turn]
@@ -429,6 +423,18 @@ class Game():
         return lines
         
 
+class ClearGames(webapp.RequestHandler):
+    """clear all game data"""
+    def post(self):
+        games=db.GqlQuery("SELECT __key__ "
+                        "FROM GameData "
+                        "WHERE started = False ")
+        db.delete(games)
+        games=db.GqlQuery("SELECT __key__ "
+                        "FROM GameData "
+                        "WHERE winpos > '' ")
+        db.delete(games)
+
 class Clear(webapp.RequestHandler):
     """clear all game data"""
     def get(self):
@@ -444,10 +450,8 @@ app = webapp.WSGIApplication([
     ('/respond', Response),
     ('/checkRequest', Response),
     ('/game', GamePage),
-    ('/post', AjaxHandler),
-    ('/get', AjaxHandler),
-    #('/clr', NewGame),
-    ('/add', AddView),
+    ('/makeMove', GamePage),
+    ('/clr', ClearGames),
     #('/clrall', Clear),
      ], debug=True)
         
