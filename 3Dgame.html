@@ -6,13 +6,21 @@
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
 <script type="text/javascript" src="/_ah/channel/jsapi"></script>
 
+<script type="text/javascript" src="/staticfiles/channel.js"></script>
+<script type="text/javascript" src="/staticfiles/inGame.js"></script>
+
+<link rel="stylesheet" type="text/css" href="/staticfiles/styles.css">
+
 <script>
 function dist3(l){return (l[0]*l[0]+l[1]*l[1]+l[2]*l[2]);}//for comparisons, does not sqrt
+
 function dist2(x,y){return Math.sqrt(x*x+y*y);}
+
 function mid3(a,b){return [(a[0]+b[0])/2,(a[1]+b[1])/2,(a[2]+b[2])/2];}
+
 function theta(x,y){
-  if(y==0){return Math.PI/4*x/Math.abs(x);}
-  return Math.atan(x/y)+(y<0?Math.PI/4:0)*x/Math.abs(x);
+  if(y==0){return Math.PI/4*(x>0?1:-1);}
+  return Math.atan(x/y)+(y<0?Math.PI/4:0)*(x<0?-1:1);
   }
 
 function rotate(x,y,a){return [x*Math.cos(a)-y*Math.sin(a),y*Math.cos(a)+x*Math.sin(a)];}
@@ -46,8 +54,7 @@ function drawcirc(x,y,r){//draws a line from a to b
   }
 
 
-var viewerID={{viewerID}};
-var gameID={{gameID}}
+var gameID='{{gameID}}';
 
 function postMsg(data){$("#error").val(data.error);}
 
@@ -68,15 +75,6 @@ function show(data){
     }
   }
 
-//functions independent of IO
-function click(pos,player){
-  $.post('post?pos='+pos+'&gameID='+gameID+'&player='+player,
-  postMsg,'json')
-  }
-
-//end of IO independent functions
-$.ajaxSetup({cache:false});
-
 </script>
 
 <link rel="stylesheet" type="text/css" href="/staticfiles/styles.css">
@@ -89,9 +87,7 @@ $.ajaxSetup({cache:false});
 </div>
 <div id="main">
   <div id="controls">
-    <input type="text" id="player" value="X"></input>
-    <input type="button" onclick="$.post('clr',{'gameID':gameID});"></input>
-    <input type="text" id="error" value="" disabled="disabled"></input>
+    <input type="button" onclick="$.post('clr');"></input>
   </div>
   
   <div id="game">
@@ -100,10 +96,12 @@ $.ajaxSetup({cache:false});
     </canvas>
     <form name="options">
       Slipperiness:<input name="slipperiness" type="range" value=75 onchange="SLIPPERINESS=Math.sqrt(1-(opts.slipperiness.value-100)*(opts.slipperiness.value-100)/10000);"><br />
-      Sensitivity:<input name="sensitivity" type="range" value=7 onchange="SENSITIVITY=Math.exp(opts.sensitivity.value/25.0-6.5);"><br />
+      Sensitivity:<input name="sensitivity" type="range" value=7 onchange="SENSITIVITY=Math.exp(opts.sensitivity.value/25.0-7);"><br />
       Distance:<input name="distance" type="range" value=0 onchange="VIEWDIST=200/(opts.distance.value*1.0+150);"><br />
     </form>
     <script>
+
+var opts=document.options;
 
 var Canvas=document.getElementById("Canvas");
 var ctx=Canvas.getContext("2d");
@@ -112,7 +110,7 @@ var CUBECENTER=[0.0,0.0,7.0];
 var VIEWDIST=4.0/3;//distanve between the viewport and the origin
 var VIEWSIZE=0.7;
 var CANVASSIZE=500;
-var SENSITIVITY=0.002;
+var SENSITIVITY=Math.exp(opts.sensitivity.value/25.0-7);
 var SLIPPERINESS=Math.sqrt(1-0.25*0.25);
 
 var gap=0.3;
@@ -124,7 +122,6 @@ for (var i=0;i<7;i++){
   }
 
 
-var opts=document.options;
 
 
 
@@ -166,8 +163,8 @@ function sortcells(){
   }
 
 function mappoint(pos){//maps a point in 3d space to a point on the canvas
-  var x=Math.round((pos[0]/(pos[2]/VIEWDIST)/VIEWSIZE+1)*CANVASSIZE/2);
-  var y=Math.round((pos[1]/(pos[2]/VIEWDIST)/VIEWSIZE+1)*CANVASSIZE/2);
+  var x=(pos[0]/(pos[2]/VIEWDIST)/VIEWSIZE+1)*CANVASSIZE/2;
+  var y=(pos[1]/(pos[2]/VIEWDIST)/VIEWSIZE+1)*CANVASSIZE/2;
   return [x,y];}
 
 
@@ -271,8 +268,8 @@ function yaw(a){
 
 
 
-var avp=0.000;
-var avy=0.00;
+var avp=0.005;
+var avy=0.01;
 $(document).ready(function(){
   timer=setInterval(function(){
     pitch(avp);
@@ -284,11 +281,19 @@ $(document).ready(function(){
     }, 10);
   });
 
-Canvas.onmousemove=function(e){if(e.buttons&&2){
-    avp+=(e.movementY||e.webkitMovementY||e.mozMovementY||0)*SENSITIVITY;
-    avy+=(e.movementX||e.webkitMovementX||e.mozMovementX||0)*SENSITIVITY;
-    draw();vv=e;}
+rmbdown=false;
+$(document).mousedown(function(e){if(e.which==3){rmbdown=true;}});
+$(document).mouseup(function(e){if(e.which==3){rmbdown=false;}});
+  
+Canvas.onmousemove=function(e){ev=e;
+    if(e.which==3 || e.buttons&2 || rmbdown){
+      avp+=(e.movementY||e.webkitMovementY||e.mozMovementY||(e.screenY-Yold))*SENSITIVITY;
+      avy+=(e.movementX||e.webkitMovementX||e.mozMovementX||(e.screenX-Xold))*SENSITIVITY;
+    }
+    Xold=e.screenX;
+    Yold=e.screenY;
   };
+  
 Canvas.oncontextmenu=function(e){return false;};
 
  
@@ -304,24 +309,12 @@ Canvas.oncontextmenu=function(e){return false;};
 <div id="side">
   This layout does not currently let you make moves.<br>
   If you right-click and drag, the cube spins<br>
-  Works in chrome and firefox, if you arn't using chrome, parameters should be between 0 and 100
+  Works in chrome and firefox, if you can't see sliders, parameters should be between 0 and 100
 </div>
 
 <script>
-//functions independent of IO
-
-function click(pos,player){
-  $.post('post?pos='+pos+'&gameID='+gameID+'&player='+player,
-  postMsg,'json')
-  }
-
-//set up channel
-channel = new goog.appengine.Channel('{{ chtoken }}');
-socket = channel.open();
-socket.onmessage = function(m){show(JSON.parse(m.data));};
-socket.onopen = function(){$.post('add',{'gameID':gameID,'viewerID':viewerID});};
-/*socket.onerror = onError;
-socket.onclose = onClose;*/
+show(JSON.parse('{{data}}'));
+openChannel('{{ chtoken }}');
 </script>
 
 </body>

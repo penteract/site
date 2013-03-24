@@ -21,8 +21,8 @@ border-style: solid;
 }
 .sub td
 {
-width: 2em;
-height: 2em;
+width: 22px;
+height: 22px;
 border-width: 2px 2px 0 0;
 border-style: solid;
 border-color: black;
@@ -43,12 +43,14 @@ background-color: red;
 <title>3DOX</title>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
 <script type="text/javascript" src="/_ah/channel/jsapi"></script>
+
 <script type="text/javascript" src="/staticfiles/channel.js"></script>
+<script type="text/javascript" src="/staticfiles/inGame.js"></script>
+
+<link rel="stylesheet" type="text/css" href="/staticfiles/styles.css">
 
 <script>
 var gameID='{{gameID}}';
-
-function postMsg(data){if (data!="none") alert(data);}
 
 function show(data){
   for(z=0;z<4;z++){
@@ -67,18 +69,17 @@ function show(data){
     }
   }
 
-$.ajaxSetup({cache:false});
 </script>
-
-<link rel="stylesheet" type="text/css" href="/staticfiles/styles.css">
 </head>
+
+
 <body>
 <div id="top">
 Welcome to my webpage where you can play 3D noughts and crosses
 </div>
 <div id="main">
   <div id="controls">
-    <input type="button" onclick="$.post('clr',{'gameID':gameID});"></input>
+    <input type="button" onclick="$.post('clr');"></input>
   </div>
   
   <div id="game">
@@ -98,39 +99,18 @@ Welcome to my webpage where you can play 3D noughts and crosses
   </div>
   
   <div id="links">
-    <a href="?pageType=canvas&gameID={{gameID}}&viewerID={{viewerID}}">canvas</a>
+    <a href="?pageType=canvas&gameID={{gameID}}">canvas</a>
   </div>
 </div>
 
 <div id="side">
 The cells represent 4 layers in a 4*4*4 cube. To win get four cells that form a line in the cube.<br>
-Click on a cell to make your move there.<br>
-<br>
-At the moment this is a very early version so you can change your counter by replacing the "X" in the text box with an "O", and reset the board by pressing the button next to it.
-</div>
-<div id="offer" style="position:fixed;bottom:10px;right:5px;width:20%;min-width:7em">
+Click on a cell to make your move there.
 </div>
 
 <script>
-//functions independent of IO
-function click(pos){
-  $.post('makeMove?pos='+pos+'&gameID='+gameID,
-  postMsg)
-  }
-
-  
-function process(m){
-  if (m.request=="gameUpdate"){
-    if(m.gameID=gameID){
-      show(m);
-    }
-  }
-}
-
-//set up channel
+show(JSON.parse('{{data}}'));
 openChannel('{{ chtoken }}');
-
-//end of functions independent of IO
 
 $(".sub td").click(function(){
   click($(this).attr("id").substr(1));

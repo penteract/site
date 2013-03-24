@@ -298,15 +298,16 @@ class GamePage(webapp.RequestHandler):
         #show the page
         template_values = {"gameID":gmNum,
                            "board":gm.board,
-                           "chtoken":pl.token}
+                           "chtoken":pl.token,
+                           "data":simplejson.dumps(Game(gm).getData())}
         pageType=self.request.get('pageType')
         file=""
         if pageType=="" or pageType=="table":
             file='tablegame.html'
-        #if pageType=="canvas":
-        #    file='canvasgame.html'
-        #if pageType=="threeD":
-        #    file='3Dgame.html'
+        if pageType=="canvas":
+            file='canvasgame.html'
+        if pageType=="threeD":
+            file='3Dgame.html'
         if file: self.response.out.write(jinja_environment.get_template(file).render(template_values))
     
     @db.transactional(xg=True)

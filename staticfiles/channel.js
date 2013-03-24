@@ -1,6 +1,8 @@
+$.ajaxSetup({cache:false});
+
 function setup(token){
-  $("#offer").hide();
   openChannel(token);
+  testC=setTimeout(newChannel,5000);
 }
 
 function openChannel(token){
@@ -12,16 +14,13 @@ function openChannel(token){
     offerGameID=message.gameID;
     if(message.request=="NewGame"){
       $.post("/respond?answer=wait&gameID="+message.gameID);
-      var offerBox=$("#offer");
-      offerBox.html(message.player+' has requested a game with you, click OK to accept, cancel to reject. You have approximately 30 seconds to decide<br><input type="button" onclick= \'$.post("respond", {answer:"yes", gameID:'+message.gameID+'}); location.replace("/game?gameID='+message.gameID+'");\' value="yes"></input><input type="button" onclick=\'$.post("respond",{answer:"no",gameID:'+message.gameID+'});$("#offer").hide();\' value="no"></input>')
-      offerBox.show();
+      $("body").append('<div id="offer" style="position:fixed;bottom:10px;right:5px;width:20%;min-width:9em">'+message.player+' has requested a game with you, do you want to start a game now? You have approximately 30 seconds to decide.<br><input type="button" onclick= \'$.post("respond", {answer:"yes", gameID:'+message.gameID+'}); location.replace("/game?gameID='+message.gameID+'");\' value="yes"></input><input type="button" onclick=\'$.post("respond",{answer:"no",gameID:'+message.gameID+'});$("#offer").hide();\' value="no"></input></div>')
     }
     else{process(message);}
   };
   socket.onopen = function(){clearTimeout(testC);};
   /*socket.onerror = onError;
   socket.onclose = onClose;*/
-  testC=setTimeout(newChannel,10000);
 }
 
 function newChannel(){
