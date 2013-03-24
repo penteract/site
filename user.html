@@ -37,19 +37,19 @@
   <br>
 <input type="text" id="name" value="{{name}}" style="width:6em"></input> 
 <input type="button" onclick="send();" value="change name"></input>
-
-  <div id="links">
-    <a href="{{logouturl}}">logout</a>
-  </div>
 </div>
 
 <div id="side">
 From this page, you can start games with other players and see games you are currently playing
 </div>
 
+<div id="links">
+  <a href="{{logouturl}}">logout</a>
+</div>
+
 <script>
 function send() {$.post('changeName',{name:$('#name').val()});}
-function proces(m) {console.log(m.data);}
+
 setup("{{chtoken}}");
 </script>
 

@@ -1,8 +1,8 @@
 $.ajaxSetup({cache:false});
-
+//testC="5";
 function setup(token){
-  openChannel(token);
   testC=setTimeout(newChannel,5000);
+  openChannel(token);
 }
 
 function openChannel(token){

@@ -76,9 +76,6 @@ function drawO(ctx,x,y,z){
   Welcome to my webpage where you can play 3D noughts and crosses
 </div>
 <div id="main" style="background-color:#FFFFFF;float:left;">
-  <div id="controls">
-    <input type="button" onclick="$.post('clr');"></input>
-  </div>
   
   <div id="game">
     <canvas id="myCanvas" width=128 height=512>
@@ -108,28 +105,10 @@ function getCell(mx,my){
 var ev  
 
 $("#myCanvas").mousedown(function(e){
-  var posx = 0;
-	var posy = 0;
-	if (!e) var e = window.event;
-	if (e.pageX || e.pageY) 	{
-		posx = e.pageX;
-		posy = e.pageY;
-	}
-	else if (e.clientX || e.clientY) 	{
-		posx = e.clientX + document.body.scrollLeft
-			+ document.documentElement.scrollLeft;
-		posy = e.clientY + document.body.scrollTop
-			+ document.documentElement.scrollTop;
-	}//source http://www.quirksmode.org/js/events_mouse.html
-  o=$("#myCanvas").offset()
-  posx-=o.left;posy-=o.top;
+  posx=e.pageX-this.offsetLeft;
+  posy=e.pageY-this.offsetTop;
   click(getCell(posx,posy).join(""),$("#player").val())});
     </script>
-  </div>
-
-  <div id="links">
-    <a href="?pageType=table&gameID={{gameID}}">basic version (for older browsers)</a><br />
-    <a href="?pageType=threeD&gameID={{gameID}}">a taste of things to come</a>
   </div>
 </div>
 
@@ -138,9 +117,15 @@ $("#myCanvas").mousedown(function(e){
   Click on a cell to make your move there.
 </div>
 
+<div id="links">
+  <a href="?pageType=table&gameID={{gameID}}">basic version (for older browsers)</a><br>
+  <a href="?pageType=threeD&gameID={{gameID}}">perspective version</a><br>
+  <a href="user">main page</a>
+</div>
+
 <script>
 show(JSON.parse('{{data}}'));
-openChannel('{{ chtoken }}');
+setup('{{ chtoken }}');
 </script>
 
 </body>

@@ -114,7 +114,7 @@ class UserPage(webapp.RequestHandler):
             pl.account=user
             pl.score=1000
             pl.token=channel.create_channel(user.nickname())
-            pl.username="usert"
+            pl.username="user"
         pl.lastonline=datetime.now()
         pl.online=True
         pl.put()
@@ -302,11 +302,11 @@ class GamePage(webapp.RequestHandler):
                            "data":simplejson.dumps(Game(gm).getData())}
         pageType=self.request.get('pageType')
         file=""
-        if pageType=="" or pageType=="table":
+        if pageType=="table":
             file='tablegame.html'
         if pageType=="canvas":
             file='canvasgame.html'
-        if pageType=="threeD":
+        if pageType=="" or pageType=="threeD":
             file='3Dgame.html'
         if file: self.response.out.write(jinja_environment.get_template(file).render(template_values))
     

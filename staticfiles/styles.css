@@ -15,5 +15,10 @@ body {background-color:#FFFFFF;
 	min-width:7em;
 	padding:1px 5px 5px 5px;
 	float:right;
-	text-align:right;
-	font-family:calibri,sans-serif;}
+	text-align:right;}
+	
+#links {width:30%;
+	min-width:7em;
+	padding:20px 5px 5px 5px;
+	float:right;
+	text-align:right;}

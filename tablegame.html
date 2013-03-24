@@ -78,9 +78,6 @@ function show(data){
 Welcome to my webpage where you can play 3D noughts and crosses
 </div>
 <div id="main">
-  <div id="controls">
-    <input type="button" onclick="$.post('clr');"></input>
-  </div>
   
   <div id="game">
     <table class='main'>
@@ -97,10 +94,6 @@ Welcome to my webpage where you can play 3D noughts and crosses
     {% endfor %}
     </table>
   </div>
-  
-  <div id="links">
-    <a href="?pageType=canvas&gameID={{gameID}}">canvas</a>
-  </div>
 </div>
 
 <div id="side">
@@ -108,9 +101,15 @@ The cells represent 4 layers in a 4*4*4 cube. To win get four cells that form a 
 Click on a cell to make your move there.
 </div>
 
+<div id="links">
+  <a href="?pageType=canvas&gameID={{gameID}}">canvas</a><br>
+  <a href="?pageType=threeD&gameID={{gameID}}">perspective version</a><br>
+  <a href="user">main page</a>
+</div>
+
 <script>
 show(JSON.parse('{{data}}'));
-openChannel('{{ chtoken }}');
+setup('{{ chtoken }}');
 
 $(".sub td").click(function(){
   click($(this).attr("id").substr(1));

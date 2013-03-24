@@ -18,6 +18,10 @@ function dist2(x,y){return Math.sqrt(x*x+y*y);}
 
 function mid3(a,b){return [(a[0]+b[0])/2,(a[1]+b[1])/2,(a[2]+b[2])/2];}
 
+function gradient(a,b){
+if (a[0]-b[0]==0){return (a[1]-b[1]>0)?100000:-100000;}
+return (a[1]-b[1])/(a[0]-b[0]);}
+
 function theta(x,y){
   if(y==0){return Math.PI/4*(x>0?1:-1);}
   return Math.atan(x/y)+(y<0?Math.PI/4:0)*(x<0?-1:1);
@@ -86,32 +90,34 @@ function show(data){
   Welcome to my webpage where you can play 3D noughts and crosses
 </div>
 <div id="main">
-  <div id="controls">
-    <input type="button" onclick="$.post('clr');"></input>
-  </div>
   
   <div id="game">
     <canvas id="Canvas" width=500 height=500>
       your browser does not support this feature
     </canvas>
     <form name="options">
-      Slipperiness:<input name="slipperiness" type="range" value=75 onchange="SLIPPERINESS=Math.sqrt(1-(opts.slipperiness.value-100)*(opts.slipperiness.value-100)/10000);"><br />
-      Sensitivity:<input name="sensitivity" type="range" value=7 onchange="SENSITIVITY=Math.exp(opts.sensitivity.value/25.0-7);"><br />
+      Slipperiness:<input name="slipperiness" type="range" value=0 onchange="SLIPPERINESS=Math.sqrt(1-(opts.slipperiness.value-100)*(opts.slipperiness.value-100)/10000);"><br />
+      Sensitivity:<input name="sensitivity" type="range" value=40 onchange="SENSITIVITY=Math.exp(opts.sensitivity.value/25.0-7);"><br />
       Distance:<input name="distance" type="range" value=0 onchange="VIEWDIST=200/(opts.distance.value*1.0+150);"><br />
     </form>
     <script>
 
+var Xold =0;
+var Yold=0;
+var mousePos=[0,0];
+var selectedCell="";
+    
 var opts=document.options;
 
 var Canvas=document.getElementById("Canvas");
 var ctx=Canvas.getContext("2d");
 
 var CUBECENTER=[0.0,0.0,7.0];
-var VIEWDIST=4.0/3;//distanve between the viewport and the origin
+var VIEWDIST=4.0/3;//distance between the viewport and the origin
 var VIEWSIZE=0.7;
 var CANVASSIZE=500;
 var SENSITIVITY=Math.exp(opts.sensitivity.value/25.0-7);
-var SLIPPERINESS=Math.sqrt(1-0.25*0.25);
+SLIPPERINESS=Math.sqrt(1-(opts.slipperiness.value-100)*(opts.slipperiness.value-100)/10000);
 
 var gap=0.3;
 var edges=[]//pairs of numbers representing the pairs of verticies in a cube between which there are edges
@@ -167,7 +173,55 @@ function mappoint(pos){//maps a point in 3d space to a point on the canvas
   var y=(pos[1]/(pos[2]/VIEWDIST)/VIEWSIZE+1)*CANVASSIZE/2;
   return [x,y];}
 
-
+  
+function getSelectedCell(){
+  selectedCell='';
+  for(var i=scells.length-1;i>=0 && selectedCell=='';i--){
+    var pos=scells[i][0]
+    selectedCell=pos[0]+pos[2]+pos[4]
+    var pointMap=coords[pos].slice(0,8);
+    var rmax=0;
+    var lmin=CANVASSIZE;
+    for(var j=0;j<pointMap.length;j++){
+      var x=pointMap[j][0];
+      if(x>rmax){r=j;rmax=x;}
+      if(x<lmin){l=j;lmin=x;}
+    }
+    if (Xold>rmax || Xold<lmin){selectedCell='';continue;}
+    var next
+    var cur=l;
+    while (cur!=r && selectedCell!=''){
+      var maxg=-1000000;
+      var pMcur=pointMap[cur];
+      for(var j=0;j<3;j++){
+        var c=cur^(1<<j);
+        var pMc=pointMap[c];
+        if (pMc[0]<pMcur[0]){continue;}
+        if (gradient(pMcur,pMc)>maxg){
+          next=c;
+          maxg=gradient(pMcur,pMc);
+        }
+      }
+      if(Xold>=pMcur[0] && gradient(pMcur,mousePos)>maxg){selectedCell='';}
+      else{cur=next;}
+    }
+    while (cur!=l && selectedCell!=''){
+      var maxg=-1000000;
+      var pMcur=pointMap[cur];
+      for(var j=0;j<3;j++){
+        var c=cur^(1<<j);
+        var pMc=pointMap[c];
+        if (pMc[0]>pMcur[0]){continue;}
+        if (gradient(pMcur,pMc)>maxg){
+          next=c;
+          maxg=gradient(pMcur,pMc);
+        }
+      }
+      if(Xold<=pMcur[0] && gradient(pMcur,mousePos)>maxg){selectedCell='';}
+      else{cur=next;}
+    }
+  }
+}
 
 
   
@@ -177,9 +231,12 @@ function drawcell(n,cellpos){//draws a cell and any token inside it
   var x=cellpos[0][0];
   var y=cellpos[0][2];
   var z=cellpos[0][4];
+  var content=cell[9]
   
   var lineWidth=4.0/Math.sqrt(cellpos[1])*VIEWDIST;
-  ctx.lineWidth=((-x-y-z*1.5)*(-x-y-z*1.5)/80+1)*lineWidth;
+  //console.log(x+y+z+"  "+selectedCell)
+  if (x+y+z==selectedCell && content==" "){lineWidth*=2;}
+  ctx.lineWidth=((-x-y-z*1.5)*(-x-y-z*1.5)/100+1)*lineWidth;
   ctx.strokeStyle=col(60*x,60*y,60*z);
   
   var e=[]
@@ -191,8 +248,6 @@ function drawcell(n,cellpos){//draws a cell and any token inside it
   for (var i=0;i<e.length;i++){
     if (e[i][2]>cellpos[1]){drawline(e[i][0],e[i][1]);}
     }
-   
-  content=cell[9]
   ctx.lineWidth=lineWidth*2;
   if (content[0]=="X"){
     ctx.strokeStyle="#0000ff";
@@ -228,13 +283,13 @@ function draw(){//draws the grid of cells onto the canvas
     for (var n=0;n<cs.length;n++){coords[index].push(mappoint(cs[n]));}
     coords[index].push(mappoint(cells[index][0]));
     }
+  getSelectedCell();
   ctx.beginPath();
   ctx.rect(0,0,CANVASSIZE,CANVASSIZE);
   ctx.fillStyle = 'white';
   ctx.fill();
   $.each(scells,drawcell);
   }
-draw()
 
 
 function pitch(a){
@@ -268,8 +323,8 @@ function yaw(a){
 
 
 
-var avp=0.005;
-var avy=0.01;
+var avp=0.00;
+var avy=0.0;
 $(document).ready(function(){
   timer=setInterval(function(){
     pitch(avp);
@@ -277,21 +332,28 @@ $(document).ready(function(){
     draw();
     avp*=SLIPPERINESS;
     avy*=SLIPPERINESS;
-    
     }, 10);
   });
+yaw(Math.PI/4)
+pitch(Math.PI/4)
+draw()
 
 rmbdown=false;
 $(document).mousedown(function(e){if(e.which==3){rmbdown=true;}});
 $(document).mouseup(function(e){if(e.which==3){rmbdown=false;}});
-  
-Canvas.onmousemove=function(e){ev=e;
-    if(e.which==3 || e.buttons&2 || rmbdown){
-      avp+=(e.movementY||e.webkitMovementY||e.mozMovementY||(e.screenY-Yold))*SENSITIVITY;
-      avy+=(e.movementX||e.webkitMovementX||e.mozMovementX||(e.screenX-Xold))*SENSITIVITY;
+
+Canvas.onmousedown=function(e){if(e.which==1 && selectedCell!=''){click(selectedCell)}}
+
+Canvas.onmousemove=function(e){
+  var posx=e.pageX-this.offsetLeft;
+  var posy=e.pageY-this.offsetTop;
+  mousePos=[posx,posy];
+  if(e.which==3 || e.buttons&2 || rmbdown){
+    avp+=(e.movementY||e.webkitMovementY||e.mozMovementY||(posy-Yold))*SENSITIVITY;
+    avy+=(e.movementX||e.webkitMovementX||e.mozMovementX||(posx-Xold))*SENSITIVITY;
     }
-    Xold=e.screenX;
-    Yold=e.screenY;
+    Xold=posx;
+    Yold=posy;
   };
   
 Canvas.oncontextmenu=function(e){return false;};
@@ -299,22 +361,23 @@ Canvas.oncontextmenu=function(e){return false;};
  
     </script>
   </div>
-
-  <div id="links">
-    <a href="?gameID={{gameID}}&pageType=table">basic version (for older browsers)</a><br />
-    <a href="?gameID={{gameID}}&pageType=canvas">canvas</a>
-  </div>
 </div>
 
 <div id="side">
-  This layout does not currently let you make moves.<br>
-  If you right-click and drag, the cube spins<br>
-  Works in chrome and firefox, if you can't see sliders, parameters should be between 0 and 100
+  Right-click and drag to spin the cube<br>
+  Left click on a cell to make a move there<br>
+  If you can't see sliders, parameters should be between 0 and 100
+</div>
+
+<div id="links">
+  <a href="?gameID={{gameID}}&pageType=table">basic version (for older browsers)</a><br />
+  <a href="?gameID={{gameID}}&pageType=canvas">canvas</a><br>
+  <a href="user">main page</a>
 </div>
 
 <script>
 show(JSON.parse('{{data}}'));
-openChannel('{{ chtoken }}');
+setup('{{ chtoken }}');
 </script>
 
 </body>
