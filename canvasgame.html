@@ -13,10 +13,10 @@
 
 <script>
 String.prototype.lpad = function(padString, length) {
-	var str = this;
-	while (str.length < length)
-		str = padString + str;
-	return str;
+  var str = this;
+  while (str.length < length)
+    str = padString + str;
+  return str;
 }
 
 function col(r,g,b){
@@ -33,13 +33,13 @@ function show(data){
   for(z=0;z<4;z++){
     for(y=0;y<4;y++){
       for(x=0;x<4;x++){
-			  ctx.fillStyle=col(255-32*x,255-32*y,255-40*z);
-			  ctx.fillRect(32*x,128*z+32*y,32,32);
+        ctx.fillStyle=col(255-32*x,255-32*y,255-40*z);
+        ctx.fillRect(32*x,128*z+32*y,32,32);
         if (data.board[z*16+y*4+x]=="X"){drawX(ctx,x,y,z);}
         else if (data.board[16*z+y*4+x]=="O"){drawO(ctx,x,y,z);}
-        }
       }
     }
+  }
   for (i in data.wonlines){
     line=data.wonlines[i]
     for(j=0;j<4;j++){
@@ -47,9 +47,9 @@ function show(data){
       ctx.arc((line[j][0]+0.5)*sz,(line[j][1]+0.5+4*line[j][2])*sz,sz/4,0 , 2 * Math.PI, false);
       ctx.fillStyle="yellow"
       ctx.fill();
-      }
     }
   }
+}
 
 function drawX(ctx,x,y,z){
   ctx.beginPath();
@@ -87,12 +87,12 @@ var c=document.getElementById("myCanvas");
 var ctx=c.getContext("2d");
 
 for(x=0;x<4;x++){
-	for(y=0;y<4;y++){
-		for(z=0;z<4;z++){
-			ctx.fillStyle=col(255-32*x,255-32*y,255-40*z);
-			ctx.fillRect(sz*x,sz*4*z+sz*y,sz,sz);
-		}
-	}
+  for(y=0;y<4;y++){
+    for(z=0;z<4;z++){
+      ctx.fillStyle=col(255-32*x,255-32*y,255-40*z);
+      ctx.fillRect(sz*x,sz*4*z+sz*y,sz,sz);
+    }
+  }
 }
 
 
@@ -100,14 +100,14 @@ function getCell(mx,my){
   var x=Math.floor(mx/sz);
   var z=Math.floor(my/(sz*4));
   var y=Math.floor((my-z*sz*4)/sz)
-  return [x,y,z]}
-
-var ev  
+  return [x,y,z]
+}
 
 $("#myCanvas").mousedown(function(e){
   posx=e.pageX-this.offsetLeft;
   posy=e.pageY-this.offsetTop;
-  click(getCell(posx,posy).join(""),$("#player").val())});
+  click(getCell(posx,posy).join(""),$("#player").val())
+});
     </script>
   </div>
 </div>
@@ -121,6 +121,12 @@ $("#myCanvas").mousedown(function(e){
   <a href="?pageType=table&gameID={{gameID}}">basic version (for older browsers)</a><br>
   <a href="?pageType=threeD&gameID={{gameID}}">perspective version</a><br>
   <a href="user">main page</a>
+</div>
+
+<div id="messagediv" class="side">
+  <div id="messages" style="overflow-y: auto;height:200px;"></div><br>
+  <input id="msg" type="text" onKeyPress="if (event.which == 13) sendMsg();"></input>
+  <input type="button" value="send" onclick="sendMsg();"> </input>
 </div>
 
 <script>

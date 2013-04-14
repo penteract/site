@@ -107,6 +107,12 @@ Click on a cell to make your move there.
   <a href="user">main page</a>
 </div>
 
+<div id="messagediv" class="side">
+  <div id="messages" style="overflow-y: auto;height:200px;"></div><br>
+  <input id="msg" type="text" onKeyPress="if (event.which == 13) sendMsg();"></input>
+  <input type="button" value="send" onclick="sendMsg();"> </input>
+</div>
+
 <script>
 show(JSON.parse('{{data}}'));
 setup('{{ chtoken }}');
