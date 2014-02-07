@@ -17,22 +17,24 @@ jinja_environment = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
 
     
-other={"X":"O","O":"X"}
+other={"X":"O","O":"X","ai":"ai"}
 
 #error handling
-class show(Exception):
+class Show(Exception):
+    """An error class used to tell me parts of program state when debugging"""
     def __init__(self,s):
         self.s=s
     def __str__(self):
         return repr(self.s)
 
 class InvalidInput(Exception):
+    """An error class used to report when two things do not match when they should do"""
     def __init__(self,input,excpected,msg):
         self.input=input
         self.excpected=excpected
         self.msg=msg
     def __str__(self):
-        return "excpected: "+repr(self.excpected)+"\nbut recieved"+repr(self.input)
+        return "excpected: "+repr(self.excpected)+"\nbut recieved"+repr(self.input)+"\n"+str(self.msg)
         
 def check(a,b,msg):
     """raises an error if inputs are not equal"""
@@ -42,13 +44,14 @@ def check(a,b,msg):
     
 #models
 class GameData(db.Model):
-    turn=db.StringProperty()#"O" or "X"
+    """Stores information about a game"""
+    turn=db.StringProperty()#"O" or "X" or "ai"
     winpos=db.StringProperty()#"" or "xyz" or "timeup"
     board=db.StringProperty()#" ","O" or "X" 64 times
     timeCreated = db.DateTimeProperty(auto_now_add=True)
     playerX=db.UserProperty()
     playerO=db.UserProperty()
-    timeLimit=db.IntegerProperty()
+    timeLimit=db.IntegerProperty()#used as the difficulty in AI games
     lastTurn=db.DateTimeProperty()
     started=db.BooleanProperty()
   
@@ -59,6 +62,8 @@ def game_key(gameNum):
     else: return gameNum
 
 def checkTime(game):
+    """checks that the player whose turn it is has not run out of time"""
+    if game.started and game.turn=="ai":return True
     if game.started and not game.winpos and datetime.now()>game.lastTurn+timedelta(seconds=game.timeLimit):
         game.winpos="timeup"
         win(game,other[game.turn],True)
@@ -68,6 +73,7 @@ def checkTime(game):
 
     
 class PlayerData(db.Model):
+    """Stores information about players"""
     account=db.UserProperty()
     token=db.StringProperty()
     username=db.StringProperty()
@@ -77,10 +83,12 @@ class PlayerData(db.Model):
     dateJoined = db.DateTimeProperty(auto_now_add=True)
     
 def getPlayer(nickname):
+    """returns the player entity from a given email address"""
     return PlayerData.get(db.Key.from_path('PlayerData',str(hash(nickname))))
     
 @db.transactional
 def playerName(nickname,em=False):
+    """returns a player's username, with the option to add the html tag <em>"""
     p=getPlayer(nickname)
     if not p:return None
     ret=p.username
@@ -89,7 +97,7 @@ def playerName(nickname,em=False):
     
 @db.transactional
 def getCurrentPlayer():
-    """gets the Entity for the player currently logged in and redirects them if necessary"""
+    """gets the PlayerData Entity for the player currently logged in"""
     user = users.get_current_user()
     if not user:
         return None
@@ -103,12 +111,17 @@ def getCurrentPlayer():
     
 @db.transactional
 def win(game,winner,timeup=False):
+    """informs players that the game is over and updates their scores"""
     pls={"X":getPlayer(game.playerX.nickname()),
          "O":getPlayer(game.playerO.nickname())}
-    loser=other[winner]
     msg={"request":"gameover", "won":True,
          "reason":"timeup" if timeup else "line",
          "gameID":game.key().name()}
+    if game.turn=="ai":
+        msg["won"]=(winner=="ai")
+        channel.send_message(pls["O"].account.nickname(),sjd(msg))
+        return None
+    loser=other[winner]
     dScore=int(pls[loser].score/10)
     pls[winner].score+=dScore
     pls[loser].score-=dScore
@@ -119,6 +132,7 @@ def win(game,winner,timeup=False):
 
 
 class Message(db.Model):
+    """stores a message sent between players in a game"""
     sender=db.UserProperty()
     content=db.StringProperty()
     date = db.DateTimeProperty(auto_now_add=True)
@@ -126,7 +140,7 @@ class Message(db.Model):
 
 #webpages
 class WelcomePage(webapp.RequestHandler):
-    """for users who have not logged in yet"""
+    """shown to users who are not logged in"""
     def get(self):
         user = users.get_current_user()
         if user:
@@ -167,8 +181,8 @@ class UserPage(webapp.RequestHandler):
                            "WHERE playerX = :1 AND started=TRUE AND winpos=''",
                            pl.account)
         games=[{"id":game.key().id_or_name(),
-                "O":playerName(game.playerO.nickname(),game.turn=="O"),
-                "X":playerName(pl.account.nickname(),game.turn=="X")}
+                "O":"AI" if game.turn=="ai" else playerName(game.playerO.nickname(),game.turn=="O"),
+                "X":playerName(pl.account.nickname(),game.turn!="O")}
                 for game in gamesX]
         gamesO=db.GqlQuery("SELECT playerX, turn "
                            "FROM GameData "
@@ -177,7 +191,7 @@ class UserPage(webapp.RequestHandler):
         games+=[{"id":game.key().id_or_name(),
                 "O":playerName(pl.account.nickname(),game.turn=="O"),
                 "X":playerName(game.playerX.nickname(),game.turn=="X")}
-                for game in gamesO]
+                for game in gamesO if game.playerX!=pl.account]
         
         template_values = {"name":pl.username,
                            "score":pl.score,
@@ -186,6 +200,34 @@ class UserPage(webapp.RequestHandler):
                            "players":players,
                            "games":games}
         template = jinja_environment.get_template('user.html')
+        self.response.out.write(template.render(template_values))
+        
+
+class HighScores(webapp.RequestHandler):
+    """shows a list of highscores"""
+    def get(self):
+        user = users.get_current_user()
+        if user:
+            pl=getPlayer(user.nickname())
+            if pl==None:
+                self.redirect("/user")
+                return None
+            template_values={
+                "player":{"name":pl.username,
+                          "id":pl.account.nickname(),
+                          "score":pl.score},
+                "logouturl":users.create_logout_url(self.request.uri),
+                "chtoken":pl.token}
+        else:
+            template_values={"player":None,"loginurl":users.create_login_url(self.request.uri)}
+        
+        players=db.GqlQuery("SELECT username,score,account "
+                            "FROM PlayerData "
+                            "ORDER BY score DESC LIMIT 10")
+        template_values["players"]=[{"name":p.username,
+            "score":p.score,
+            "id":p.account.nickname()} for p in players]
+        template = jinja_environment.get_template('highscore.html')
         self.response.out.write(template.render(template_values))
 
 class ChangeName(webapp.RequestHandler):
@@ -216,7 +258,7 @@ class NewGame(webapp.RequestHandler):
     """handles a request by one player to start a game with another"""
     
     def get(self):
-        """returns a page where the user can select options for the game they want to start"""
+        """shows a page where the user can select options for the game they want to start"""
         pl=getCurrentPlayer()
         if not pl:
             self.redirect("/")
@@ -281,6 +323,45 @@ class NewGame(webapp.RequestHandler):
         channel.send_message(op.account.nickname(),simplejson.dumps(message))
         self.response.out.write(gmNum)
         
+
+class AIGame(webapp.RequestHandler):
+    """handles a request to start a game with the AI"""
+    
+    def get(self):
+        """returns a page where the user can select options for the game they want to start"""
+        pl=getCurrentPlayer()
+        if not pl:
+            self.redirect("/")
+            return None
+        template_values = {"chtoken":pl.token}
+        template = jinja_environment.get_template('aioffer.html')
+        self.response.out.write(template.render(template_values))
+        
+        
+    @db.transactional(xg=True)
+    def post(self):
+        """starts a game against the AI"""
+        pl=getCurrentPlayer()
+        if not pl:
+            return None
+        #create the game Entity
+        difficulty=int(self.request.get("difficulty"))
+        assert difficulty in range(3)
+        gm=True
+        while gm:
+            gmNum=str(randrange(100000000))
+            gm=GameData.get(game_key(gmNum))
+        gm=GameData(key_name=gmNum)
+        gm.turn="ai"
+        gm.board=" "*64
+        gm.winpos=""
+        gm.started=True
+        gm.playerO=pl.account
+        gm.playerX=pl.account#saves trouble but may cause problems
+        gm.timeLimit=difficulty
+        gm.put()
+        self.response.out.write(gmNum)
+        
         
 class Response(webapp.RequestHandler):
     """handles the response to a game request"""
@@ -307,7 +388,7 @@ class Response(webapp.RequestHandler):
             db.delete(gm)
 
 class CheckRequest(webapp.RequestHandler): 
-    """for players checking the opponent is online"""
+    """tells a player if the opponent is online"""
     def get(self):
         gmNum=self.request.get("gameID")
         gm=GameData.get(game_key(gmNum))
@@ -318,6 +399,7 @@ class CheckRequest(webapp.RequestHandler):
         op=getPlayer(opName)
         if not op or not op.online:
             self.response.out.write("no")
+            db.delete(gm)
         else:
             self.response.out.write("yes")
         
@@ -336,28 +418,44 @@ class GamePage(webapp.RequestHandler):
         if not gm:
             self.redirect("/")
             return None
-        if not gm.winpos and gm.started:
-             checkTime(gm)
-        
-        #show the page
-        template_values = {"gameID":gmNum,
-                           "board":gm.board,
-                           "chtoken":pl.token,
-                           "data":sjd(Game(gm).getData())}
+        if not gm.started:
+            self.redirect("/user")
+            return None
+        if gm.turn=="ai":
+            template_values = {"gameID":gmNum,
+                               "board":gm.board,
+                               "chtoken":pl.token,
+                               "data":sjd(Game(gm).getData()),
+                               "player":getPlayer(gm.playerO.nickname()).username,
+                               "opponent":"AI"}
+        else:
+            if not gm.winpos:
+                checkTime(gm)
+            players=[getPlayer(gm.playerX.nickname()),
+                     getPlayer(gm.playerO.nickname())]
+            pln=int(players[1]==pl)
+            
+            #show the page
+            template_values = {"gameID":gmNum,
+                               "board":gm.board,
+                               "chtoken":pl.token,
+                               "data":sjd(Game(gm).getData()),
+                               "player":players[pln].username,
+                               "opponent":players[1-pln].username}
         pageType=self.request.get('pageType')
         file=""
-        if pageType=="table":
+        if pageType=="" or pageType=="table":
             file='tablegame.html'
         if pageType=="canvas":
             file='canvasgame.html'
-        if pageType=="" or pageType=="threeD":
+        if pageType=="threeD":
             file='3Dgame.html'
         if file: self.response.out.write(jinja_environment.get_template(file).render(template_values))
     
 class MakeMove (webapp.RequestHandler):
+    """handles a request to make a move"""
     @db.transactional(xg=True)
     def post(self):
-        """handles a request to make a move"""
         pl = getCurrentPlayer()
         if not pl:
             return None
@@ -382,8 +480,11 @@ class MakeMove (webapp.RequestHandler):
             return None
         game.sync(gm)
         gm.lastTurn=datetime.now()
-        if gm.winpos:
-            win(gm,game.turn)
+        if gm.winpos: win(gm,game.turn)
+        if gm.turn=="ai" and not gm.winpos:
+            game.aiMove(gm.timeLimit)
+            if gm.winpos: win(gm,"AI")
+            game.sync(gm)
         gm.put()
         for player in [gm.playerX,gm.playerO]:
             channel.send_message(player.nickname(),sjd(game.getData()))
@@ -392,19 +493,19 @@ class MakeMove (webapp.RequestHandler):
 class GetGame (webapp.RequestHandler):
     @db.transactional(xg=True)
     def get(self):
-        """deals with a user polling for a game, """
+        """deals with a user polling for a game, checks the time limit"""
         gmNum=self.request.get('gameID')
         gameID = game_key(gmNum)
         gm=GameData.get(gameID)
         if not gm:
             return None
-        checkTime(gm)
+        if gm.turn!="ai":checkTime(gm)
         self.response.out.write(sjd(Game(gm).getData()))
     
 class SendMessage(webapp.RequestHandler):
+    """lets a user send a message to another user"""
     @db.transactional(xg=True)
     def post(self):
-        """handles a request to make a move"""
         pl = getCurrentPlayer()
         if not pl: return None
         gmNum=self.request.get('gameID')
@@ -431,7 +532,9 @@ class SendMessage(webapp.RequestHandler):
 
 
 class Game():
+    """a game object that supports manipulation"""
     def __init__(self,gmData):
+        """creates the object from an Entity """
         bd=gmData.board
         l=[]
         for z in range(4):
@@ -457,25 +560,51 @@ class Game():
             
         
     def getData(self):
+        """returns information about the game in a format suitable to be sent to a client"""
         d={"request":"gameUpdate", "gameID":self.Num,
             "wonlines":self.wonlines}
         d["board"]="".join(["".join(["".join(y) for y in z]) for z in self.board])
         return d
         
     def go(self,player,x,y,z):
+        """validates a move then updates the game state"""
+        tok=["O","X"][int(player=="ai")] if self.turn=="ai" else self.turn
         check(self.started,True,"this game has not yet started")
         check(self.winpos,"","game's over")
-        check(player.account,self.players[self.turn],"it is not your turn")
+        if player!="ai":check(player.account,self.players[tok],"it is not your turn")
         check(self.board[z][y][x]," ","you must go in an empty cell")
-        self.board[z][y][x]=self.turn
+        self.board[z][y][x]=tok
         for line in self.linesThrough(x,y,z):
-            if all([p==self.turn for p in line[0]]):
+            if all([p==tok for p in line[0]]):
                 self.wonlines.append(line[1])
         if self.wonlines: self.winpos=str(x)+str(y)+str(z)
         else:self.turn=other[self.turn]
         
+    def aiMove(self,difficulty):
+        """makes a move by the AI at the given difficulty setting"""
+        pscores=[[0]*4,[1,1,1,100],[10,20,81,8000]][difficulty]
+        oscores=[[0]*4,[1,1,1,10],[10,15,80,1000]][difficulty]
+        maxscore=0
+        topcells=[]
+        for x in range(4):
+            for y in range(4):
+                for z in range(4):
+                    if self.board[z][y][x]!=" ":continue
+                    score=0
+                    for line,cls in self.linesThrough(x,y,z):
+                        p=line.count("X")#assumes AI is always X
+                        o=line.count("O")
+                        if p==0: score+=oscores[o]
+                        elif o==0: score+=pscores[p]
+                    if score>maxscore:
+                        topcells=[(x,y,z)]
+                        maxscore=score
+                    elif score==maxscore:topcells.append((x,y,z))
+        x,y,z=topcells[randrange(len(topcells))]
+        self.go("ai",x,y,z)
         
     def sync(self,gameData):
+        """updates a Gamedata entity to match the current status of this game"""
         gameData.board=self.getData()["board"]
         gameData.turn=self.turn
         gameData.winpos=self.winpos
@@ -519,7 +648,7 @@ class Game():
 
 class ClearGames(webapp.RequestHandler):
     """clear all game data"""
-    def post(self):
+    def get(self):
         games=db.GqlQuery("SELECT __key__ "
                         "FROM GameData "
                         "WHERE started = False ")
@@ -529,18 +658,20 @@ class ClearGames(webapp.RequestHandler):
                         "WHERE winpos > '' ")
         db.delete(games)
 
-class Clear(webapp.RequestHandler):
-    """clear all game data"""
-    def get(self):
-        db.delete(PlayerData.all(keys_only=True).run())
+#class Clear(webapp.RequestHandler):
+#    """clear all game data"""
+#    def get(self):
+#        db.delete(PlayerData.all(keys_only=True).run())
 
         
 app = webapp.WSGIApplication([
     ('/', WelcomePage),
     ('/user', UserPage),
+    ('/highscores', HighScores),
     ('/changeName', ChangeName),
     ('/newChannel', ChannelCreator),
     ('/newGame', NewGame),
+    ('/aiGame', AIGame),
     ('/respond', Response),
     ('/checkRequest', CheckRequest),
     ('/game', GamePage),

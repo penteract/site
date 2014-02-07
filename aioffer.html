@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>3DOX</title>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
+<script type="text/javascript" src="/_ah/channel/jsapi"></script>
+<script type="text/javascript" src="/staticfiles/channel.js"></script>
+
+<script>$.ajaxSetup({cache:false});</script>
+
+<link rel="stylesheet" type="text/css" href="/staticfiles/styles.css">
+</head>
+
+
+<body>
+<div id="top">
+Select options to start a game against the AI
+</div>
+  
+<div id="main">
+<form name="GameOptions">
+difficulty of AI
+<select name="aidifficulty">
+  <option>easy</option>
+  <option>normal</option>
+  <option>hard</option>
+</select><br>
+<input type="button" onclick="send();" value="start game"></input>
+</form>
+</div>
+
+<div id="side">
+on this page, select the difficulty of the AI you want to play against
+</div>
+
+<div id="links">
+  <a href="/user">Main page</a>
+</div>
+
+
+<script>
+function send() {
+  $.post('aiGame',
+        {difficulty:document.GameOptions.aidifficulty.selectedIndex},
+        function(m){
+          location.replace("/game?gameID="+m);
+        });
+}
+function process(m) {//used in channel.js
+}
+setup("{{chtoken}}");
+</script>
+</body>
+
+</html>

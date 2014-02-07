@@ -76,7 +76,7 @@ function drawO(ctx,x,y,z){
   Welcome to my webpage where you can play 3D noughts and crosses
 </div>
 <div id="main" style="background-color:#FFFFFF;float:left;">
-  
+  <b id="player">{{player}}</b> vs <span id="other">{{opponent}}</span><br>
   <div id="game">
     <canvas id="myCanvas" width=128 height=512>
       your browser does not support this feature
@@ -118,7 +118,7 @@ $("#myCanvas").mousedown(function(e){
 </div>
 
 <div id="links">
-  <a href="?pageType=table&gameID={{gameID}}">basic version (for older browsers)</a><br>
+  <a href="?pageType=table&gameID={{gameID}}">plain version</a><br>
   <a href="?pageType=threeD&gameID={{gameID}}">perspective version</a><br>
   <a href="user">main page</a>
 </div>

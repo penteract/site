@@ -1,5 +1,5 @@
 application: 3d-o-x
-version: prerelease1
+version: final1candidate1
 runtime: python27
 api_version: 1
 threadsafe: true
@@ -11,6 +11,10 @@ handlers:
   
 - url: /staticfiles
   static_dir: staticfiles
+  
+- url: /clr
+  script: main.app
+  login: admin
   
 - url: /.*
   script: main.app

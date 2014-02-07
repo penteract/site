@@ -1,0 +1,4 @@
+cron:
+- description: delete finished games
+  url: /clr
+  schedule: every 2 hours

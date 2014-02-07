@@ -18,7 +18,23 @@ indexes:
 
 - kind: GameData
   properties:
+  - name: playerO
+  - name: started
+  - name: winpos
   - name: playerX
+  - name: turn
+
+- kind: GameData
+  properties:
+  - name: playerX
+  - name: playerO
+  - name: turn
+
+- kind: GameData
+  properties:
+  - name: playerX
+  - name: started
+  - name: winpos
   - name: playerO
   - name: turn
 
@@ -27,6 +43,28 @@ indexes:
   - name: online
   - name: lastOnline
     direction: desc
+
+- kind: PlayerData
+  properties:
+  - name: online
+  - name: score
+    direction: desc
+  - name: account
+  - name: username
+
+- kind: PlayerData
+  properties:
+  - name: online
+  - name: score
+    direction: desc
+  - name: username
+
+- kind: PlayerData
+  properties:
+  - name: score
+    direction: desc
+  - name: account
+  - name: username
 
 - kind: Turn
   ancestor: yes

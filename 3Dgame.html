@@ -87,6 +87,7 @@ function show(data){//updates the data about the content of cells, which will ch
 </div>
 <div id="main" style="min-width:500px;">
   
+  <b id="player">{{player}}</b> vs <span id="other">{{opponent}}</span><br>
   <div id="game">
     <canvas id="Canvas" width=500 height=500>
       your browser does not support this feature
@@ -377,7 +378,7 @@ Canvas.oncontextmenu=function(e){return false;};
 </div>
 
 <div id="links">
-  <a href="?gameID={{gameID}}&pageType=table">basic version (for older browsers)</a><br />
+  <a href="?gameID={{gameID}}&pageType=table">plain version</a><br />
   <a href="?gameID={{gameID}}&pageType=canvas">canvas</a><br>
   <a href="user">main page</a><br>
 </div>
