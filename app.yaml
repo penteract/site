@@ -1,5 +1,5 @@
 application: 3d-o-x
-version: final1candidate1
+version: 2
 runtime: python27
 api_version: 1
 threadsafe: true

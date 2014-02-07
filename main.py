@@ -140,23 +140,19 @@ class Message(db.Model):
 
 #webpages
 class WelcomePage(webapp.RequestHandler):
-    """shown to users who are not logged in"""
+    """the front page of my website"""
     def get(self):
         user = users.get_current_user()
-        if user:
-            self.redirect("/user")
-        else:
-            template_values = {"user":None,
-                               "loginurl":users.create_login_url(self.request.uri)}
-            template = jinja_environment.get_template('welcome.html')
-            self.response.out.write(template.render(template_values))
+	template_values = {}
+	template = jinja_environment.get_template('index.html')
+	self.response.out.write(template.render(template_values))
         
 class UserPage(webapp.RequestHandler):
     """shows a user's homepage where they can continue games and start new ones"""
     def get(self):
         user = users.get_current_user()
         if not user:
-            self.redirect("/")
+            self.redirect(users.create_login_url(self.request.uri))
             return None
         pl=getPlayer(user.nickname())
         if pl==None:#create a new user
@@ -195,7 +191,7 @@ class UserPage(webapp.RequestHandler):
         
         template_values = {"name":pl.username,
                            "score":pl.score,
-                           "logouturl":users.create_logout_url(self.request.uri),
+                           "logouturl":users.create_logout_url("/"),
                            "chtoken":pl.token,
                            "players":players,
                            "games":games}
@@ -666,7 +662,7 @@ class ClearGames(webapp.RequestHandler):
         
 app = webapp.WSGIApplication([
     ('/', WelcomePage),
-    ('/user', UserPage),
+    ('/3Dox', UserPage),
     ('/highscores', HighScores),
     ('/changeName', ChangeName),
     ('/newChannel', ChannelCreator),
