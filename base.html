@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>{% block title %}{% endblock %}</title>
+
+{% block styles %}<link rel="stylesheet" type="text/css" href="/staticfiles/styles.css">{% endblock %}
+
+{% block scripts %}
+<!--<script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js"></script>-->
+<script src="/staticfiles/jquery.min.js"></script>
+{% if chtoken is defined %}
+<script type="text/javascript" src="/_ah/channel/jsapi"></script>
+<script type="text/javascript" src="/staticfiles/channel.js"></script>
+<script>$(function(){setup("{{chtoken}}")});</script>
+{%endif%}
+
+<script>
+$(function(){$("#offer").hide();$("#abox").hide();
+  $(document).click(function(){$("#abox").hide()});
+  $.ajaxSetup({cache:false});})
+
+function myalert(text){
+    $("#abox").html(text)
+    $("#abox").show()
+}
+</script>
+{% endblock %}
+
+</head>
+
+<body>
+<div id="top" >{%block top%}{%endblock%}</div>
+
+<div id="main">
+{%if debug is defined%}{{debug}}{%endif%}
+{%block main%}{%endblock%}
+</div>
+
+<div class="side">
+    <div id="side">
+        {% block side %}{%endblock%}
+    </div>
+
+    <div id="links">
+{%for text,href in path[:-1]%}
+        <a href="{{href}}" class="link">{{text}}</a><br>
+{%endfor%}
+        <a class="current">{{path[-1][0]}}</a><br><br>
+{%if links is defined %}
+{%for text,href in links%}
+        <a href="{{href}}" class="link">{{text}}</a><br>
+{%endfor%}
+{%endif%}
+    </div>
+    {%block moreside%}{%endblock%}
+</div>
+
+<div id="abox">this isn't really going to work without javascript and jquery</div>
+<div id="offer" style="position:fixed;bottom:10px;right:5px;width:20%;min-width:9em">
+    <span id="offertext">hey</span><br>
+    <input type="button" onclick= '$.post("respond", {answer:"yes", gameID:gameID}, function(){location.replace("/game?gameID="+gameID);});' value="yes"></input>
+    <input type="button" onclick='$.post("respond",{answer:"no",gameID:gameID});$("#offer").hide();\' value="no"></input></div>
+</body>
+</html>

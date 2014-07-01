@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Multiplayer Games{%endblock%}
+{% block top %}Here are some multiplayer games{%endblock%}
+
+{% block main %}
+{%if name is defined%}
+    <div id="players" style="float:left;width:12em;padding-right:1em">
+        <strong>Players</strong><br>
+        <ul style="list-style-type:none;padding-left:0;margin-top:0.5em">
+        {% for player in players %}
+        <li>{{player.playername}} ({{player.score}})</li>
+        {%endfor%}
+        </ul>
+    </div>
+    <div id="games" style="float:left;min-width:12em;width:calc(100% - 13em)">
+        <strong>Games</strong><br>
+        {% if not games %}
+            you are not currently playing any games<br>
+        {% endif %}
+        {% for game in games %}
+            <a href="/3DOX/game?gameID={{game.id}}">{{game[1]}} vs {{game[2]}}</a><br>
+        {%endfor%}
+        <br>
+        your nickname: <input type="text" id="name" value="{{name}}" style="width:6em"></input> 
+        <input type="button" onclick="send();" value="change name"></input>
+        <br><br>
+{%else%}
+<div id="games" style="float:left;min-width:10em;">
+You are not currently logged in, log in with a google account to keep track of your games<br>
+<a href="{{loginurl}}">login</a> (not working yet)<br>
+{%endif%}
+start a game of:
+<ul>
+{%for game in game_list%}
+<li><a href="/{{game}}/">{{game}}</a></li>
+{%endfor%}
+</ul>
+</div>
+{%endblock%}
+
+
+{% block side %}
+This site lets you play some 2-player games against people at other machines. For some of them there is an AI you can try and beat.<br>
+{%endblock%}
+
+
+{%block scripts%}
+{{super()}}
+<script>
+function send() {
+  $.post('/changeName',{name:$("#name").val()});
+}
+</script>
+{%endblock%}

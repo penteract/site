@@ -1,0 +1,107 @@
+{% extends "game.html" %}
+
+{% block title %}3DOX - play{%endblock%}
+{% block top %}Play 3D noughts and crosses{%endblock%}
+
+{% block side %}
+        The cells represent 4 layers in a 4*4*4 cube. To win get four cells that form a line in the cube.<br>
+        Click on a cell to make your move there.
+{%endblock%}
+
+{%block styles%}
+{{super()}}
+<style type="text/css">
+table.main
+{
+}
+.main>tr>td
+{
+margin: 0;
+padding: 0;
+}
+
+table.sub
+{
+transform: skew(-20deg);
+-ms-transform: skew(-20deg);
+-webkit-transform: skew(-20deg);
+border-width: 0 0 2px 2px;
+border-spacing: 0;
+border-color: black;
+border-style: solid;
+}
+.sub td
+{
+width: 28px;
+height: 22px;
+border-width: 2px 2px 0 0;
+border-style: solid;
+border-color: black;
+}
+
+p.in-cell
+{
+text-align: center;
+margin: 0 0 0 0;
+}
+
+td.won
+{
+background-color: red;
+}
+</style>
+{%endblock%}
+
+{%block scripts%}
+{{super()}}
+<script>
+var gameID='{{gameID}}';
+
+function show(data){
+  for(z=0;z<4;z++){
+    for(y=0;y<4;y++){
+      for(x=0;x<4;x++){
+        $("#p"+x+y+z).text(data.board[z*16+y*4+x]);
+        $("#t"+x+y+z).removeClass("won");
+        }
+      }
+    }
+  for (i in data.wonlines){
+    line=data.wonlines[i]
+    for(j=0;j<4;j++){
+      $("#t"+line[j][0]+line[j][1]+line[j][2]).addClass("won");
+      }
+    }
+  }
+$(function(){$(".sub td").click(function(){
+  click($(this).attr("id").substr(1));
+  })});
+</script>
+{%endblock%}
+
+
+{%block game%}
+<table class='main'>
+{% for z in range(4) %}
+  <tr><td><table class='sub'>
+  {% for y in range(4) %}
+    <tr>
+    {% for x in range(4) %}
+      <td id={{ "t"~x~y~z }}><p id={{ "p"~x~y~z }} class=in-cell> </p></td>
+    {% endfor %}
+    </tr>
+  {% endfor %}
+  </table></td></tr>
+{% endfor %}
+</table>
+{%endblock%}
+
+<script>
+show(JSON.parse('{{data}}'));
+setup('{{ chtoken }}');
+
+$(".sub td").click(function(){
+  click($(this).attr("id").substr(1));
+  });
+</script>
+

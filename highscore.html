@@ -31,18 +31,22 @@
 </table>
 </div>
 
-<div id="side">
-Here is a list of the players with the highest scores.
-</div>
+<div class="side">
+    <div class="side">
+    <div id="side">
+    Here is a list of the players with the highest scores.
+    </div>
 
-<div id="links">
-  {% if player %}
-  <a href="{{logouturl}}">logout</a><br>
-  <a href="/user">User page</a>
-  {% else %}
-  <a href="{{loginurl}}">log in</a>
-  {% endif %}
+    <div id="links">
+        {% if player %}
+        <a href="{{logouturl}}">logout</a><br>
+        <a href="/3Dox">User page</a>
+        {% else %}
+        <a href="{{loginurl}}">log in</a>
+        {% endif %}
+    </div>
 </div>
+    
 {%if player!=none%}
 <script>
 setup("{{chtoken}}");

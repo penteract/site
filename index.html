@@ -1,24 +1,11 @@
-<!DOCTYPE html>
-<html>
-<head>
+{% extends "base.html" %}
+{% block title %}Toby Cathcart Burn{%endblock%}
+{% block top %}Welcome to my website{%endblock%}
+{% block main %}
+    <a href="/games/">Play some 2-player games over the internet, including 3D noughts and crosses and ensquared</a><br>
+    <a href="https://github.com/penteract">My github account</a><br>
+{%endblock%}
+{% block side %}
+  There's some stuff in the sideboxes.
+{%endblock%}
 
-<title>TDCB</title>
-
-<link rel="stylesheet" type="text/css" href="/staticfiles/styles.css">
-</head>
-
-<body>
-<div id="top" >
-Welcome to my website, not much stuff here yet.
-</div>
-<div id="main">
-  <a href=/3Dox>Play 3d noughts and crosses</a><br>
-  <a href=https://github.com/penteract>My github account (the largest thing there's this website)</a><br>
-</div>
-
-<div id="side">
-There's some stuff in the boxes on the side
-</div>
-
-</body>
-</html>

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}{{game}}{%endblock%}
+{% block top %}Start a game of {{game}}{%endblock%}
+
+{% block main %}
+<form name="GameOptions">
+maximum turn length
+<select id="turnLength">
+  <option value=60>1 min</option>
+  <option value=120>2 mins</option>
+  <option value=300>5 mins</option>
+  <option value=600>10 mins</option>
+</select>
+(does not matter against AI)<br>
+opponent
+<select id="opp">
+{%for opp in opponents%}
+  <option value="{{opp.id}}">{{opp.name}}</option>
+{%endfor%}
+</select><br>
+<input type="button" onclick="send();" value="start game"></input>
+</form>
+</div>
+
+{%endblock%}
+
+{%block side%}
+on this page, select the options for the game you want to start
+{%endblock%}
+
+{%block scripts%}
+{{super()}}
+<script>
+function send() {
+  $.post('newGame',
+	{time:$("#turnLength").val(),
+	 opponent:$("#opp").val()},
+	function(m){
+	  if(m.slice(0,5)=="error"){
+		alert("the user is not online");
+		location.assign("/user");
+	  }
+	  else if (m.slice(0,5)=="goto:") location.assign(m.slice(5))
+	  else {
+		setTimeout(function(){
+		  $.get("checkRequest",{gameID:m},
+                        function(m2){
+                            if(m2=="no"){
+                                alert("the user is not online");
+                                location.assign("/user");
+                        }});
+		  },5000);
+		gameID=m;
+	  }
+	});
+}
+</script>
+{%endblock%}

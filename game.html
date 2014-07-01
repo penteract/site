@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{%block main%}
+  <span id="player" style="font-weight:bold">{{player}}</span> vs <span id="other">{{opponent}}</span><br>
+  <div id="game">
+{%block game%}{%endblock%}
+  </div>
+{%endblock%}
+
+{%block moreside%}
+<div id="messagediv">
+    <div id="messages" style="overflow-y: auto;height:200px;"></div><br>
+    <input id="msg" type="text" onKeyPress="if (event.which == 13) sendMsg();"></input>
+    <input type="button" value="send" onclick="sendMsg();"> </input>
+</div>
+{%endblock%}
+
+{%block scripts%}
+{{super()}}
+<script type="text/javascript" src="/staticfiles/inGame.js"></script>
+
+<script>
+var gameID='{{gameID}}';
+{%if playerID is defined%}
+var playerID='{{playerID}}'
+{%endif%}
+$(function(){show(JSON.parse('{{data}}'));});
+</script>
+{%endblock%}
+

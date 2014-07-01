@@ -1,16 +1,16 @@
-<!DOCTYPE html>
-<html>
-<head>
+{% extends "game.html" %}
 
-<title>3DOX</title>
-<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
-<script type="text/javascript" src="/_ah/channel/jsapi"></script>
+{% block title %}3DOX - play{%endblock%}
+{% block top %}Play 3D noughts and crosses{%endblock%}
 
-<script type="text/javascript" src="/staticfiles/channel.js"></script>
-<script type="text/javascript" src="/staticfiles/inGame.js"></script>
+{% block side %}
+    Right-click and drag to spin the cube<br>
+    Left click on a cell to make a move there<br>
+    If you can't see sliders, parameters should be between 0 and 100
+{%endblock%}
 
-<link rel="stylesheet" type="text/css" href="/staticfiles/styles.css">
-
+{%block scripts%}
+{{super()}}
 <script>
 function dist3(l){return (l[0]*l[0]+l[1]*l[1]+l[2]*l[2]);}
 //distance between a point in 3D space and the origin
@@ -76,29 +76,20 @@ function show(data){//updates the data about the content of cells, which will ch
   }
 }
 </script>
+{%endblock%}
 
-<link rel="stylesheet" type="text/css" href="/staticfiles/styles.css">
-</head>
-<body>
+{%block game%}
+<canvas id="Canvas" width=500 height=500>
+  your browser does not support this feature
+</canvas>
+<form name="options">
+  Slipperiness:<input name="slipperiness" type="range" value=0 onchange="SLIPPERINESS=Math.sqrt(1-(opts.slipperiness.value-100)*(opts.slipperiness.value-100)/10000);"><br />
+  Sensitivity:<input name="sensitivity" type="range" value=40 onchange="SENSITIVITY=Math.exp(opts.sensitivity.value/25.0-7);"><br />
+  Distance:<input name="distance" type="range" value=0 onchange="VIEWDIST=200/(opts.distance.value*1.0+150);"><br />
+  <!--these options contain formulea which map the value between 1 and 100 to a value more appropriate for the variable-->
+</form>
 
-
-<div id="top">
-  Welcome to my webpage where you can play 3D noughts and crosses
-</div>
-<div id="main" style="min-width:500px;">
-  
-  <b id="player">{{player}}</b> vs <span id="other">{{opponent}}</span><br>
-  <div id="game">
-    <canvas id="Canvas" width=500 height=500>
-      your browser does not support this feature
-    </canvas>
-    <form name="options">
-      Slipperiness:<input name="slipperiness" type="range" value=0 onchange="SLIPPERINESS=Math.sqrt(1-(opts.slipperiness.value-100)*(opts.slipperiness.value-100)/10000);"><br />
-      Sensitivity:<input name="sensitivity" type="range" value=40 onchange="SENSITIVITY=Math.exp(opts.sensitivity.value/25.0-7);"><br />
-      Distance:<input name="distance" type="range" value=0 onchange="VIEWDIST=200/(opts.distance.value*1.0+150);"><br />
-      <!--these options contain formulea which map the value between 1 and 100 to a value more appropriate for the variable-->
-    </form>
-    <script>
+<script>
     
 var opts=document.options;
 
@@ -367,33 +358,5 @@ Canvas.onmousemove=function(e){
 Canvas.oncontextmenu=function(e){return false;};
 
  
-    </script>
-  </div>
-</div>
-
-<div id="side">
-  Right-click and drag to spin the cube<br>
-  Left click on a cell to make a move there<br>
-  If you can't see sliders, parameters should be between 0 and 100
-</div>
-
-<div id="links">
-  <a href="?gameID={{gameID}}&pageType=table">plain version</a><br />
-  <a href="?gameID={{gameID}}&pageType=canvas">canvas</a><br>
-  <a href="user">main page</a><br>
-</div>
-
-<div id="messagediv" class="side">
-  <div id="messages" style="overflow-y: auto;height:200px;"></div><br>
-  <input id="msg" type="text" onKeyPress="if (event.which == 13) sendMsg();"></input>
-  <input type="button" value="send" onclick="sendMsg();"> </input>
-</div>
-
-
-<script>
-show(JSON.parse('{{data}}'));
-setup('{{ chtoken }}');
 </script>
-
-</body>
-</html>
+{%endblock%}

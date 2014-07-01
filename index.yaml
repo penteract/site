@@ -10,6 +10,12 @@ indexes:
 # automatically uploaded to the admin console when you next deploy
 # your application using appcfg.py.
 
+- kind: Game
+  properties:
+  - name: player0
+  - name: state
+  - name: player1
+
 - kind: GameData
   properties:
   - name: playerO
@@ -37,6 +43,19 @@ indexes:
   - name: winpos
   - name: playerO
   - name: turn
+
+- kind: Player
+  properties:
+  - name: lastOnline
+    direction: desc
+  - name: playername
+  - name: score
+
+- kind: Player
+  properties:
+  - name: online
+  - name: lastOnline
+    direction: desc
 
 - kind: PlayerData
   properties:
