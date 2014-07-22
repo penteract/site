@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-
+<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
 <title>{% block title %}{% endblock %}</title>
 
 {% block styles %}<link rel="stylesheet" type="text/css" href="/staticfiles/styles.css">{% endblock %}
@@ -43,12 +43,12 @@ function myalert(text){
     </div>
 
     <div id="links">
-{%for text,href in path[:-1]%}
+{%for href,text in path[:-1]%}
         <a href="{{href}}" class="link">{{text}}</a><br>
 {%endfor%}
-        <a class="current">{{path[-1][0]}}</a><br><br>
+        <a class="current">{{path[-1][1]}}</a><br><br>
 {%if links is defined %}
-{%for text,href in links%}
+{%for href,text in links%}
         <a href="{{href}}" class="link">{{text}}</a><br>
 {%endfor%}
 {%endif%}

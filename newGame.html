@@ -32,7 +32,7 @@ on this page, select the options for the game you want to start
 {{super()}}
 <script>
 function send() {
-  $.post('newGame',
+  $.post('newgame',
 	{time:$("#turnLength").val(),
 	 opponent:$("#opp").val()},
 	function(m){

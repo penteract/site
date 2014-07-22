@@ -32,8 +32,8 @@ class Game(polymodel.PolyModel):
         elif player==1: e=self.player1.email()
         else: e=""
         if e.startswith("p "):
-            return "/"+self.name+"/play?gameID="+self.key().name()+"&player="+e[2:]
-        else: return "/"+self.name+"/play?gameID="+self.key().name()
+            return "/"+self.path+"/play?gameID="+self.key().name()+"&player="+e[2:]
+        else: return "/"+self.path+"/play?gameID="+self.key().name()
         
     
     def gameover(self):
@@ -71,7 +71,7 @@ class Game(polymodel.PolyModel):
         msg={"request":"gameOver", "won":not bool(self.state&DRAW),
              "reason":"timeup" if byTime else "line",
              "gameID":self.key().name()}
-        if byTime: self.state^=TURN|TIMEUP
+        if byTime: self.state^=TURN;self.state|=TIMEUP
         self.state|=GAMEOVER
         
     def getData(self):
@@ -100,6 +100,8 @@ class Game(polymodel.PolyModel):
         if not isinstance(msg,str):msg=sjd(msg)
         for p in self.player0,self.player1:
             if p.email()[1]!=" ":channel.send_message(p.email(),msg)
+    
+        
 
 
 def game_key(gameNum):

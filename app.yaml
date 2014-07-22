@@ -5,6 +5,13 @@ api_version: 1
 threadsafe: true
 
 handlers:
+#normalise case
+#At some point I am going to be tripped up by this
+#doesn't work on post
+- url: /[^?]*[A-Z].*
+  script: case.app
+
+
 - url: /favicon\.ico
   static_files: favicon.ico
   upload: favicon\.ico

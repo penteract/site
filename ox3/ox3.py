@@ -5,8 +5,8 @@ from game import Game
 from random import randrange
 
 from google.appengine.ext import db
-        
-		
+
+
 class AI:
     def __init__(self,diff):
         self.weights=[([0]*4,[0]*4),([1,1,1,100],[1,1,1,10]),([10,20,81,8000],[10,15,80,1000])][diff]
@@ -16,24 +16,22 @@ class AI:
         return pos##fails
 
 
-class OX(Game):
+class ox3(Game):
     """a 3D version of noughts and crosses on a 4*4*4 grid"""
     board=db.StringProperty(default=" "*64)
     winpos=db.StringProperty(default="")
     wonlines=[]
     
-    name="3DOX"
+    path="ox3"
+    name="3D noughts and crosses"
     ais=[AI(diff) for diff in range(3)]
+    views=["table","canvas","perspective"]
     norm={"":"table",
-          "table":"table",
-          "canvas":"canvas",
-          "threeD":"threeD"}#normalizes the name of the view
-    views={"table":"OX/tablegame.html",
-           "canvas":"OX/canvasgame.html",
-           "threeD":"OX/3Dgame.html"}
+          "threeD":"perspective"}#normalizes the name of the view
+    norm.update({v:v for v in views})
            
     def __init__(self,*args,**kwargs):
-        super(OX,self).__init__(*args,**kwargs)
+        super(ox3,self).__init__(*args,**kwargs)
         self.wonlines=[]
         if self.winpos: self.checklines(int(c) for c in self.winpos)
     

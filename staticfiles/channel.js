@@ -1,5 +1,3 @@
-
-
 function setup(token){
   openChannel(token);
 }
@@ -16,9 +14,7 @@ function openChannel(token){
       time=message.time
       time=["1 min","2 mins","5 mins","10 mins","1 day","7 days"][time]
       $.post("/respond?answer=wait&gameID="+message.gameID);
-      $("#offertext").html(message.player+' has requested a game with you,'+
-                           ' the time limit per turn is '+time+'.'+
-                           ' Do you want to start a game now?')
+      $("#offertext").html(message.player+' has requested a game with you, the time limit per turn is '+time+'.  do you want to start a game now?')
       $("#offer").show()
       console.log("req recieved")
       

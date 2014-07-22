@@ -31,8 +31,8 @@ You are not currently logged in, log in with a google account to keep track of y
 {%endif%}
 start a game of:
 <ul>
-{%for game in game_list%}
-<li><a href="/{{game}}/">{{game}}</a></li>
+{%for path,name in game_list%}
+<li><a href="/{{path}}/">{{name}}</a></li>
 {%endfor%}
 </ul>
 </div>
@@ -48,7 +48,7 @@ This site lets you play some 2-player games against people at other machines. Fo
 {{super()}}
 <script>
 function send() {
-  $.post('/changeName',{name:$("#name").val()});
+  $.post('/changename',{name:$("#name").val()});
 }
 </script>
 {%endblock%}
