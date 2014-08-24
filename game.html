@@ -21,9 +21,16 @@
 
 <script>
 var gameID='{{gameID}}';
+
 {%if playerID is defined%}
 var playerID='{{playerID}}'
+  {%if opponent!="AI"%}
+  setTimeout(poller,t);t+=2000
+  {%endif%}
+{%else%}
+var playerID=""
 {%endif%}
+
 $(function(){show(JSON.parse('{{data}}'));});
 </script>
 {%endblock%}

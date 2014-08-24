@@ -9,12 +9,14 @@ function openChannel(token){
   socket.onmessage = function(m){
     var message=JSON.parse(m.data)
     console.log(message)
-    offerGameID=message.gameID;
     if(message.request=="NewGame"){
+      GameID=message.gameID;
+      gname=message.gname
+      gpath=message.gpath
       time=message.time
-      time=["1 min","2 mins","5 mins","10 mins","1 day","7 days"][time]
+      time=time+" seconds"
       $.post("/respond?answer=wait&gameID="+message.gameID);
-      $("#offertext").html(message.player+' has requested a game with you, the time limit per turn is '+time+'.  do you want to start a game now?')
+      $("#offertext").html(message.player+' has requested a game of '+gname+' with you, the time limit per turn is '+time+'.  do you want to start a game now?')
       $("#offer").show()
       console.log("req recieved")
       
@@ -25,5 +27,5 @@ function openChannel(token){
 }
 
 function newChannel(){
-  $.post('newChannel',function(data){openChannel(data)})
+  $.post('/newchannel',function(data){openChannel(data)})
 }

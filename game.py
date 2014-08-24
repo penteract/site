@@ -6,13 +6,13 @@ from tools import *
 
 from google.appengine.ext import db
 from google.appengine.ext.db import polymodel
-
+from google.appengine.api import channel
     
 #models
 class Game(polymodel.PolyModel):
     """Base class for games"""
     timeCreated = db.DateTimeProperty(auto_now_add=True)
-    player0=db.UserProperty()
+    player0=db.UserProperty()#the player who started the game
     player1=db.UserProperty()
     # "a AI" is the 'email' of any AI
     # players which do not have accounts are stored with an address 
@@ -32,7 +32,7 @@ class Game(polymodel.PolyModel):
         elif player==1: e=self.player1.email()
         else: e=""
         if e.startswith("p "):
-            return "/"+self.path+"/play?gameID="+self.key().name()+"&player="+e[2:]
+            return "/"+self.path+"/play?gameID="+self.key().name()+"&playerID="+e[2:]
         else: return "/"+self.path+"/play?gameID="+self.key().name()
         
     
@@ -53,6 +53,10 @@ class Game(polymodel.PolyModel):
         turn=self.state&TURN
         check([self.player0,self.player1][turn],pl,"it is not your turn")
         return turn
+    
+    def aiMove(self,diff):
+        """makes a move by the AI at the given difficulty setting"""
+        self.ais[diff].play(self)
         
     def endmove(self):
         """to be called after a move ends"""
@@ -75,7 +79,8 @@ class Game(polymodel.PolyModel):
         self.state|=GAMEOVER
         
     def getData(self):
-        """returns information about the game in a format suitable to be sent to a client"""
+        """returns information about the game in a format suitable to be sent to a client
+        uses dataHeader but should not send time information"""
         abstract
         
     def dataHeader(self):
@@ -106,8 +111,9 @@ class Game(polymodel.PolyModel):
 
 def game_key(gameNum):
     """Constructs a Datastore key for a GameData entity with a given id."""
+    #I really should know if I'm working with a key or a key name
     if all([c in "1234567890" for c in gameNum]):
-        return db.Key.from_path('GameData',gameNum)
+        return db.Key.from_path('Game',gameNum)
     else: return gameNum
     
 @db.transactional

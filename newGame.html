@@ -18,9 +18,9 @@ opponent
   <option value="{{opp.id}}">{{opp.name}}</option>
 {%endfor%}
 </select><br>
+Do you want to start?<input type="checkbox" id="turn" > </input><br>
 <input type="button" onclick="send();" value="start game"></input>
 </form>
-</div>
 
 {%endblock%}
 
@@ -33,26 +33,18 @@ on this page, select the options for the game you want to start
 <script>
 function send() {
   $.post('newgame',
-	{time:$("#turnLength").val(),
-	 opponent:$("#opp").val()},
-	function(m){
-	  if(m.slice(0,5)=="error"){
-		alert("the user is not online");
-		location.assign("/user");
-	  }
-	  else if (m.slice(0,5)=="goto:") location.assign(m.slice(5))
-	  else {
-		setTimeout(function(){
-		  $.get("checkRequest",{gameID:m},
-                        function(m2){
-                            if(m2=="no"){
-                                alert("the user is not online");
-                                location.assign("/user");
-                        }});
-		  },5000);
-		gameID=m;
-	  }
-	});
+    {time:$("#turnLength").val(),
+     opponent:$("#opp").val(),
+     turn:$("#turn").prop("checked")},
+    function(m){
+      if(m.slice(0,5)=="error"){
+        alert("the user is not online");
+        location.assign("/");
+      }
+      else{m=JSON.parse(m)
+        if (m.request=="goto") location.assign(m.target)
+      }
+  });
 }
 </script>
 {%endblock%}

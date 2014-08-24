@@ -55,8 +55,6 @@ background-color: red;
 {%block scripts%}
 {{super()}}
 <script>
-var gameID='{{gameID}}';
-
 function show(data){
   for(z=0;z<4;z++){
     for(y=0;y<4;y++){
@@ -73,6 +71,7 @@ function show(data){
       }
     }
   }
+
 $(function(){$(".sub td").click(function(){
   click($(this).attr("id").substr(1));
   })});
@@ -95,13 +94,3 @@ $(function(){$(".sub td").click(function(){
 {% endfor %}
 </table>
 {%endblock%}
-
-<script>
-show(JSON.parse('{{data}}'));
-setup('{{ chtoken }}');
-
-$(".sub td").click(function(){
-  click($(this).attr("id").substr(1));
-  });
-</script>
-

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Please Wait{%endblock%}
+{% block top %}Start a game of {{game}}{%endblock%}
+
+{% block main %}
+{%if url is defined%}
+<p>Give this URL to your opponent. When they visit that page, you will both be sent to pages where you can play each other</p>
+{{url}}<br>
+{%else%}
+Please wait for your opponent to respond. 
+{%endif%}
+ If they take longer than 2 minutes, the game will be cancelled
+{%endblock%}
+
+{%block side%}
+Please wait for the other player to be ready to play the game. If they take longer than 2 minutes, it will be aborted.
+{%endblock%}
+
+{%block scripts%}
+{{super()}}
+<script>
+function process(m) {//used in channel.js
+  if (m.gameID=="{{gameID}}"){
+    if (m.request="reply"){
+      if(m.answer=="no"){
+        myalert("sorry, they don't want to play right now");
+        location.replace("/");
+      }
+      else if(m.answer=="yes"){
+        location.replace("play?gameID={{gameID}}");
+      }
+    }
+  }
+}
+function poller(){
+    $.get("checkrequest",{gameID:"{{gameID}}",playerID:"{{playerID}}" },
+        function(m){
+            if(m=="no") location.replace("/")
+            else{m=JSON.parse(m)
+                 if(m.request=="goto")location.replace(m.target)
+            }
+    })
+}
+setInterval(poller,5000);
+</script>
+{%endblock%}

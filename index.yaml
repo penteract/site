@@ -14,7 +14,18 @@ indexes:
   properties:
   - name: player0
   - name: state
+
+- kind: Game
+  properties:
+  - name: player0
+  - name: state
   - name: player1
+
+- kind: Game
+  properties:
+  - name: player1
+  - name: state
+  - name: player0
 
 - kind: GameData
   properties:

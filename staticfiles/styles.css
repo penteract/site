@@ -1,54 +1,54 @@
 body {background-color:#FFFFFF;
-    font-family:calibri,sans-serif;
-    margin:0px}
+	font-family:calibri,sans-serif;
+	margin:0px}
 
 #top {min-width:20em;
-    background-color:lightblue;
-    font-size:20pt;
-    font-family:"Bell MT",serif;
-    padding:0.5em;}
-    
+	background-color:lightblue;
+	font-size:20pt;
+	font-family:"Bell MT",serif;
+	padding:0.5em;}
+	
 
 #main {min-width:20em;
-    padding:1em 1.5em;}
+	padding:1em 1.5em;}
 
 .side{min-width:10em;
-    text-align:right;
-    clear:both;}
+	text-align:right;
+	clear:both;}
 
 @media (min-width:35em){
 #main {float:left;
-    min-width:20em;
-    width:60%;
-    padding:1em 1.5em;}
+	min-width:20em;
+	width:60%;
+	padding:1em 1.5em;}
 .side{width:30%;
-    max-width:calc(100% - 25em);
-    float:right;
-    clear:none;
-    text-align:right;}
+	max-width:calc(100% - 25em);
+	float:right;
+	clear:none;
+	text-align:right;}
 }
 
 .current{
-    font-weight:bold;
+	font-weight:bold;
 }
 
 #messages{overflow-y: auto;
-    height:200px;
-    border:2px solid black;
-    padding:2px;}
+	height:200px;
+	border:2px solid black;
+	padding:2px;}
 
 #side {background-color:#c0302d;
-    color:white;
-    padding:0.1em 1em 0.2em 0.2em;}
+	color:white;
+	padding:0.1em 1em 0.2em 0.2em;}
 
 #links {min-width:7em;
-    padding:1em 1em 0.2em 0.2em;}
+	padding:1em 1em 0.2em 0.2em;}
 
 #abox {background-color:yellow;
-    padding:1em;
-    font-weight:bold;
-    position:fixed;
-    width:100px;
-    left:50%;
-    top:40%;
-    margin-left:-50px;}
+	padding:1em;
+	font-weight:bold;
+	position:fixed;
+	width:100px;
+	left:50%;
+	top:40%;
+	margin-left:-50px;}

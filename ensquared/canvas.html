@@ -1,0 +1,136 @@
+{% extends "game.html" %}
+
+{% block title %}3DOX - play{%endblock%}
+{% block top %}Play 3D noughts and crosses{%endblock%}
+
+{% block side %}
+You must turn each turn, and not hit anything or go off the edge
+{%endblock%}
+
+
+{%block scripts%}
+{{super()}}
+<script>
+SIZE=16
+String.prototype.lpad = function(padString, length) {
+  var str = this;
+  while (str.length < length)
+    str = padString + str;
+  return str;
+}
+
+function col(r,g,b){
+  return "#"+(b+g*256+r*256*256).toString(16).lpad("0",6)}
+
+
+var sz=20//gap between verticies
+var SIZE=16//15*15 verticies
+var gameID='{{gameID}}';
+
+function show(data){
+  var c=document.getElementById("myCanvas");
+  var ctx=c.getContext("2d");
+  
+  ctx.beginPath()
+  ctx.fillStyle="black"
+  for(x=1;x<SIZE;x++){
+    for(y=1;y<SIZE;y++){
+      ctx.beginPath()
+      ctx.arc(sz*x,sz*y,2.3,0,Math.PI*2);
+      ctx.fill()
+    }
+  }
+
+  ctx.lineWidth=4
+  p0=data.p0
+  p1=data.p1
+  
+  ctx.beginPath()
+  x=sz*SIZE/2
+  y=x
+  ctx.moveTo(x,y)
+  ctx.strokeStyle="blue"
+  for(a=0;a<p0.length;a++){
+    switch(p0[a]){
+      case "U": y-=sz;break
+      case "D": y+=sz;break
+      case "L": x-=sz;break
+      case "R": x+=sz;break
+    }
+    ctx.lineTo(x,y)
+  }
+  ctx.stroke()
+  
+  ctx.beginPath()
+  x=sz*SIZE/2
+  y=x
+  ctx.moveTo(x,y)
+  ctx.strokeStyle="red"
+  for(a=0;a<p1.length;a++){
+    switch(p1[a]){
+      case "U": y-=sz;break
+      case "D": y+=sz;break
+      case "L": x-=sz;break
+      case "R": x+=sz;break
+    }
+    ctx.lineTo(x,y)
+  }
+  ctx.stroke()
+  
+}
+
+function drawX(ctx,x,y,z){
+  ctx.beginPath();
+  ctx.strokeStyle="blue"
+  ctx.moveTo(x*sz+2,y*sz+z*sz*4+2);
+  ctx.lineTo(x*sz+sz-2,y*sz+z*sz*4+sz-2);
+  ctx.moveTo(x*sz+2,y*sz+z*sz*4+sz-2);
+  ctx.lineTo(x*sz+sz-2,y*sz+z*sz*4+2);
+  ctx.stroke();
+  }
+
+function drawO(ctx,x,y,z){
+  ctx.beginPath();
+  ctx.strokeStyle="red"
+  ctx.arc((x+0.5)*sz,(y+0.5+4*z)*sz,sz/2-2,0 , 2 * Math.PI, false);
+  ctx.stroke();
+}
+
+</script>
+
+{%endblock%}
+
+  
+{%block game%}
+<canvas id="myCanvas" width=320 height=320>
+    your browser does not support this feature
+</canvas>
+    
+<script>
+
+var c=document.getElementById("myCanvas");
+var ctx=c.getContext("2d");
+
+ctx.fillStyle="black"
+for(x=1;x<SIZE;x++){
+    for(y=1;y<SIZE;y++){
+        ctx.beginPath()
+        ctx.arc(sz*x,sz*y,2.3,0,Math.PI*2);
+        ctx.fill()
+    }
+}
+    
+
+function kdown(e){
+    k=e.keyCode-37
+    //This should just be arrow keys
+    if(k>=0 || k<4){
+        click(["L","U","R","D"][k])
+    }
+}
+
+$(document).keydown(kdown)
+
+</script>
+    
+{%endblock%}
