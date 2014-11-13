@@ -1,3 +1,5 @@
 *.pyc
 __pycache__
 appengine.3d-o-x.toby
+
+logs2014-08-24.txt

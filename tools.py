@@ -13,13 +13,15 @@ import hashlib
 from random import choice
 from string import digits,ascii_lowercase
 from datetime import datetime,timedelta
+import logging
 from django.utils import simplejson
 sjd=simplejson.dumps
 
 def randstr(len=16):
-	return "".join([choice(digits+ascii_lowercase) for n in range(len)])
+    return "".join([choice(digits+ascii_lowercase) for n in range(len)])
 
 OFFLINE=120#time in seconds after last action after which the player is considered offline
+
 hash_=lambda x:hashlib.md5(x).hexdigest()
 def gurl(gpath,kname):
     return "/"+gpath+"/play?gameID="+kname

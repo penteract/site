@@ -124,7 +124,7 @@ for(x=1;x<SIZE;x++){
 function kdown(e){
     k=e.keyCode-37
     //This should just be arrow keys
-    if(k>=0 || k<4){
+    if(k>=0 && k<4){
         click(["L","U","R","D"][k])
     }
 }

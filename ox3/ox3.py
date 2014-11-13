@@ -49,6 +49,7 @@ class ox3(Game):
     winpos=db.StringProperty(default="")
     wonlines=[]
     
+    lastPlayerWins=True
     path="ox3"
     name="3D noughts and crosses"
     ais=[AI(diff) for diff in range(3)]+[
@@ -58,10 +59,7 @@ class ox3(Game):
         AI(([1033, 3340, 6538, 532192], [990, 987, 4815, 70285]),"g5"),
         AI(([1239, 2591, 7146, 529523], [808, 1443, 4219, 71831]),"g6"),
         AI(([1410, 2362, 6431, 689015], [699, 1656, 5501, 63965]),"gg6")]
-    views=["table","canvas","perspective"]
-    norm={"":"table",
-          "threeD":"perspective"}#normalizes the name of the view
-    norm.update({v:v for v in views})
+    views=["table","perspective"]
            
     def __init__(self,*args,**kwargs):
         super(ox3,self).__init__(*args,**kwargs)

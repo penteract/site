@@ -14,13 +14,12 @@ class ensquared(Game):
     #really these could just be bitstrings saying left/right or up/down, but string stores the length as well
     p0=db.StringProperty(default="U")
     p1=db.StringProperty(default="L")
+    lastPlayerWins=False
     
     path="ensquared"
     name="Ensquared"
     ais=[]
     views=["canvas"]
-    norm={"":"canvas"}#normalizes the name of the view
-    norm.update({v:v for v in views})
            
     def __init__(self,*args,**kwargs):
         super(ensquared,self).__init__(*args,**kwargs)

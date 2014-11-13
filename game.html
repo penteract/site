@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {%block main%}
-  <span id="player" style="font-weight:bold">{{player}}</span> vs <span id="other">{{opponent}}</span><br>
+  <span id="0" {%if playern==0%}style="font-weight:italic" {%endif%}>{{player0}}</span> vs <span id="1"{%if playern==1%}style="font-style:italic" {%endif%}>{{player1}}</span><br>
   <div id="game">
 {%block game%}{%endblock%}
   </div>
@@ -30,8 +30,10 @@ var playerID='{{playerID}}'
 {%else%}
 var playerID=""
 {%endif%}
-
-$(function(){show(JSON.parse('{{data}}'));});
+player={{playern}}//0 or 1
+lastm='{{data}}'
+lastj=JSON.parse(lastm)
+$(function(){process(JSON.parse(lastm));});
 </script>
 {%endblock%}
 

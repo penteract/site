@@ -18,7 +18,6 @@ function openChannel(token){
       $.post("/respond?answer=wait&gameID="+message.gameID);
       $("#offertext").html(message.player+' has requested a game of '+gname+' with you, the time limit per turn is '+time+'.  do you want to start a game now?')
       $("#offer").show()
-      console.log("req recieved")
       
     }
     else{process(message);}

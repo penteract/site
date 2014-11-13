@@ -111,8 +111,11 @@ opts.slipperiness.onchange();
 
 var Xold=0;
 var Yold=0;
+var downCell="";
 var mousePos=[0,0];
-var selectedCell="";//teh cell which the mouse is currently over, or "" if the mouse is not over any cell
+var hoverCell="";//the cell which the mouse is currently over, or "" if the mouse is not over any cell
+var selectedCell="";//The selected cell. If this is clicked again, it will be considered confirmation of a play
+var downCell="";//the cell which the mouse was pressed down over
 
 var edgePairs=[]//pairs of numbers representing the pairs of verticies in a cube between which there are edges
 for (var i=0;i<7;i++){//initialize edgePairs
@@ -167,13 +170,13 @@ function mapPoint(pos){//maps a point in 3d space to a point on the canvas
 }
 
   
-function getSelectedCell(){
-  //updates the value of selectedCell
-  selectedCell='';
-  for(var i=scells.length-1;i>=0 && selectedCell=='';i--){
+function getHoverCell(){
+  //updates the value of hoverCell
+  hoverCell='';
+  for(var i=scells.length-1;i>=0 && hoverCell=='';i--){
     //test each cell starting with the nearest, going to the furthest away
     var pos=scells[i][0]
-    selectedCell=pos[0]+pos[2]+pos[4]
+    hoverCell=pos[0]+pos[2]+pos[4]
     var pointMap=cornerMap[pos].slice(0,8);
     //find the leftmost and rightmost verticies of the cell
     var rmax=0;
@@ -183,11 +186,11 @@ function getSelectedCell(){
       if(x>rmax){r=j;rmax=x;}
       if(x<lmin){l=j;lmin=x;}
     }
-    if (Xold>rmax || Xold<lmin){selectedCell='';continue;}
+    if (Xold>rmax || Xold<lmin){hoverCell='';continue;}
     var next;
     var cur=l;
     //go round the edge of the cell anticlockwise (remember y increases downwards) from the leftmost point
-    while (cur!=r && selectedCell!=''){
+    while (cur!=r && hoverCell!=''){
       var maxg=-1000000;
       var pMcur=pointMap[cur];
       for(var j=0;j<3;j++){//test each vertex which shares an edge with the current one 
@@ -199,11 +202,11 @@ function getSelectedCell(){
           maxg=gradient(pMcur,pMc);
         }
       }
-      if(Xold>=pMcur[0] && gradient(pMcur,mousePos)>maxg){selectedCell='';}
+      if(Xold>=pMcur[0] && gradient(pMcur,mousePos)>maxg){hoverCell='';}
       //if the gradient to the mouse is greater than that to the next vertex, the mouse is on the convex hull so outside the cell
       else{cur=next;}
     }
-    while (cur!=l && selectedCell!=''){//the same as before, this time checking if the mouse is above the cell, going from right to left
+    while (cur!=l && hoverCell!=''){//the same as before, this time checking if the mouse is above the cell, going from right to left
       var maxg=-1000000;
       var pMcur=pointMap[cur];
       for(var j=0;j<3;j++){
@@ -215,7 +218,7 @@ function getSelectedCell(){
           maxg=gradient(pMcur,pMc);
         }
       }
-      if(Xold<=pMcur[0] && gradient(pMcur,mousePos)>maxg){selectedCell='';}
+      if(Xold<=pMcur[0] && gradient(pMcur,mousePos)>maxg){hoverCell='';}
       else{cur=next;}
     }
   }
@@ -280,7 +283,7 @@ function draw(){//draws the grid of cells onto the canvas
     for (var n=0;n<cs.length;n++){cornerMap[index].push(mapPoint(cs[n]));}
     cornerMap[index].push(mapPoint(cells[index][0]));
   }
-  getSelectedCell();
+  getHoverCell();
   ctx.beginPath();
   ctx.rect(0,0,CANVASSIZE,CANVASSIZE);
   ctx.fillStyle = 'white';
@@ -337,17 +340,20 @@ yaw(Math.PI/4)
 pitch(Math.PI/4)
 draw()
 
-rmbdown=false;
-$(document).mousedown(function(e){if(e.which==3){rmbdown=true;}});
-$(document).mouseup(function(e){if(e.which==3){rmbdown=false;}});
+mousedown=false;
+$(document).mousedown(function(e){mousedown=true;});
+$(document).mouseup(function(e){mousedown=false;});
 
-Canvas.onmousedown=function(e){if(e.which==1 && selectedCell!=''){click(selectedCell)}}
+Canvas.onmousedown=function(e){
+  if(selectedCell==hoverCell && selectedCell!="")
+    click(selectedCell);
+  else selectedCell=hoverCell;}
 
 Canvas.onmousemove=function(e){
   var posx=e.pageX-this.offsetLeft;
   var posy=e.pageY-this.offsetTop;
   mousePos=[posx,posy];
-  if(e.which==3 || e.buttons&2 || rmbdown){
+  if(e.which==1 || e.buttons&1 || mousedown){
     avp+=(e.movementY||e.webkitMovementY||e.mozMovementY||(posy-Yold))*SENSITIVITY;
     avy+=(e.movementX||e.webkitMovementX||e.mozMovementX||(posx-Xold))*SENSITIVITY;
   }

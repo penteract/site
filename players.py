@@ -14,6 +14,8 @@ import jinja2
 def getPlayer(user,put=True):
     if user.email().startswith("p "):
         return None
+    if user.email().startswith("a "):
+        return None
     assert " " not in user.email()#warning, may not count some valid addresses
     kname=str(hash_(user.nickname()))
     pl=Player.get_by_key_name(kname)

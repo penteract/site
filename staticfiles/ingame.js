@@ -1,8 +1,17 @@
+
+
+STARTED=4
+AIP=2
+GAMEOVER=8
+DRAW=16
+TURN=1
+TIMEUP=32
+
 function click(pos){
     $.post('makemove?pos='+pos+'&gameID='+gameID+'&playerID='+playerID,
         function (data){
             if (data[0]!="{") myalert(data)
-            else show(JSON.parse(data));})
+            else process(JSON.parse(data));})
 }
 
 function sendMsg(){
@@ -13,7 +22,18 @@ function sendMsg(){
 
 function process(m){
     if (m.request=="gameUpdate" && m.gameID==gameID){
+        if (m.message!=lastj.message){
+            $("#messages").prepend(m.content+"<br>");
+        }
+        if((m.state&GAMEOVER)!=(lastj.state&GAMEOVER)){
+            myalert("game over: "+m.state&DRAW?"its a draw":
+                (m.state&TIMEUP ?"time up":"you either lost or won"))
+        }
+        $("#"+m.state&TURN).addClass("turn")
+        $("#"+(1-m.state&TURN)).removeClass("turn")
+        
         show(m);
+        lastj=m
     }
     else if(m.request=="gameover" && m.gameID==gameID){
         if(m.reason=="timeup"){myalert(m.won?"congratulations, you won":"time up, sorry")}
@@ -25,16 +45,14 @@ function process(m){
 }
 
 t=500
-lastm=""
-
 function poller(){
-    $.get("getgame",{"gameID":gameID},function(m){updatet(JSON.parse(m));})
-    setTimeout(poller,t);t+=2000
+    $.get("getgame",{"gameID":gameID},updatet)
+    setTimeout(poller,t);t+=1000
 }
 
-function updatet(j){
-    process(j)
-    if (j!=lastm){t=500}
-    lastm=j
+function updatet(m){
+    j=JSON.parse(m)
+    if (m!=lastm){t=500;process(j)}
+    lastm=m
 }
 

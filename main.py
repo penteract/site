@@ -6,7 +6,7 @@ from players import Player,getCurrentPlayer,getPlayer,getCurrentUser
 from ox3.ox3 import ox3
 from ensquared.ensquared import ensquared
 
-#(path,name,object)
+#{path:object}
 GAMES={"ox3":ox3,
        "ensquared":ensquared}
 
@@ -175,7 +175,7 @@ class NewGamePage(webapp.RequestHandler):
                       "opponents":opps,
                       "path":[("/","all games"),
                               ("/"+gpath+"/",GAME.name)],
-                      "links":[("/about","about "+GAME.name)]})
+                      "links":[("about","about "+GAME.name)]})
         load(self,"newGame.html",tvals)
 
 ##needs work if one player is logged in
@@ -256,11 +256,12 @@ class StartGame(webapp.RequestHandler):
             assert gm.player0!=gm.player1##
             self.redirect(str("play?gameID="+gmNum))
         gm.state|=STARTED
+        gm.lastTurn=datetime.now()
         gm.put()
         
 
 
-####
+
 class Response(webapp.RequestHandler):
     """handles the response to a game request"""
     @db.transactional(xg=True)
@@ -301,7 +302,6 @@ class WaitPage(webapp.RequestHandler):
                       "path":[("/","all games"),
                                ("/"+gpath+"/",GAME.name)]})
         
-        ####
         if gm.player1.email().startswith("x "):
             tvals["url"]="%s/%s/startgame?gameID=%s"%(self.request.host,gpath,kname)
         load(self,"wait.html",tvals)
@@ -331,8 +331,6 @@ class CheckRequest(webapp.RequestHandler):
 
 
 
-
-##tentatively working
 class PlayPage(webapp.RequestHandler):
     def get(self,gpath):
         """Shows a page on which a game can be played"""
@@ -343,26 +341,33 @@ class PlayPage(webapp.RequestHandler):
         if not gm:
             self.redirect("/")
             return None
-        if not gm.state&STARTED:crash
+        if not gm.state&STARTED:
+            logging.error("acessing a game which has not started")
+            crash
         
         if pl:
             tvals = {"player":pl.playername,
                      "chtoken":pl.token}
-            if gm.player0==pl.account:   opp=gm.player1
-            elif gm.player1==pl.account: opp=gm.player0
+            if gm.player0==pl.account:   playern=0;opp=gm.player1
+            elif gm.player1==pl.account: playern=1;opp=gm.player0
             else:return None
         else:
             pnum=self.request.get("playerID")
-            if gm.player0.email()=="p "+pnum: opp=gm.player1
-            elif gm.player1.email()=="p "+pnum: opp=gm.player0
+            if gm.player0.email()=="p "+pnum: playern=0;opp=gm.player1
+            elif gm.player1.email()=="p "+pnum: playern=1;opp=gm.player0
             else:return None
             tvals = {"player":"you","playerID":pnum}
             
         if opp.email().startswith("p "): tvals["opponent"]="opponent"
         elif gm.state&AIP: tvals["opponent"]="AI"
-        else: tvals["opponent"]=getPlayer(gm.player1).playername
+        else: tvals["opponent"]=getPlayer(opp).playername
         
-        pagetype=gm.norm[self.request.get("pageType")]
+        tvals["playern"]=playern
+        tvals["player0"]=tvals["opponent"] if playern else tvals["player"]
+        tvals["player1"]=tvals["player"] if playern else tvals["opponent"]
+        
+        pagetype=self.request.get("pageType")
+        if not pagetype:pagetype=gm.views[0]
         tvals["gameID"]=gmNum
         tvals["data"]=sjd(gm.getData())
         tvals["path"]=[("/","all games"),
@@ -398,7 +403,7 @@ class MakeMove (webapp.RequestHandler):
         gm.tellPlayers(dat)
         self.response.out.write(dat)
 
-##
+
 class GetGame (webapp.RequestHandler):
     @db.transactional(xg=True)
     def get(self,gpath):
@@ -410,11 +415,12 @@ class GetGame (webapp.RequestHandler):
         if gm.state&AIP==0: gm.checkTime()
         self.response.out.write(sjd(gm.getData()))
 
-##
+## disabled
 class SendMessage(webapp.RequestHandler):
     """lets a user send a message to another user"""
     @db.transactional(xg=True)
-    def post(self):
+    def post(self,gpath):
+        return None ####
         pl = getCurrentPlayer()
         if not pl: return None
         gmNum=self.request.get('gameID')
@@ -450,6 +456,8 @@ class ClearGames(webapp.RequestHandler):
                         "FROM Game "
                         "WHERE winpos > '' ")
         db.delete(games)
+
+
 
 
 
