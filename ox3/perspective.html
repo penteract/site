@@ -12,10 +12,10 @@
 {%block scripts%}
 {{super()}}
 <script>
+//Helper functions
 function dist3(l){return (l[0]*l[0]+l[1]*l[1]+l[2]*l[2]);}
 //distance between a point in 3D space and the origin
 //for comparisons, does not sqrt
-
 
 function mid3(a,b){return [(a[0]+b[0])/2,(a[1]+b[1])/2,(a[2]+b[2])/2];}
 //the midpoint of two coordinates in 3D space
@@ -56,10 +56,9 @@ function drawcirc(x,y,r){//draws a circle center (x,y) radius r
   ctx.stroke();
 }
 
-var gameID='{{gameID}}';
+//End of helper functions
 
-function postMsg(data){$("#error").val(data.error);}
-
+//The interface for a game
 function show(data){//updates the data about the content of cells, which will change the grid when draw() is next called
   for(z=0;z<4;z++){
     for(y=0;y<4;y++){
@@ -79,7 +78,7 @@ function show(data){//updates the data about the content of cells, which will ch
 {%endblock%}
 
 {%block game%}
-<canvas id="Canvas" width=500 height=500>
+<canvas id="Canvas" class="unselectable" width=500 height=500>
   your browser does not support this feature
 </canvas>
 <form name="options">
@@ -90,8 +89,13 @@ function show(data){//updates the data about the content of cells, which will ch
 </form>
 
 <script>
-    
+
 var opts=document.options;
+var VIEWDIST;//distance between the viewport and the origin
+var SENSITIVITY,SLIPPERINESS;
+opts.distance.onchange();
+opts.sensitivity.onchange();
+opts.slipperiness.onchange();
 
 var Canvas=document.getElementById("Canvas");
 var ctx=Canvas.getContext("2d");
@@ -101,21 +105,6 @@ var VIEWSIZE=0.7;
 var CANVASSIZE=500;
 var gap=0.38//half the size of the gap between cells, 0.5 would give cells of width 0
 
-var VIEWDIST;//distance between the viewport and the origin
-var SENSITIVITY,SLIPPERINESS;
-opts.distance.onchange();
-opts.sensitivity.onchange();
-opts.slipperiness.onchange();
-
-
-
-var Xold=0;
-var Yold=0;
-var downCell="";
-var mousePos=[0,0];
-var hoverCell="";//the cell which the mouse is currently over, or "" if the mouse is not over any cell
-var selectedCell="";//The selected cell. If this is clicked again, it will be considered confirmation of a play
-var downCell="";//the cell which the mouse was pressed down over
 
 var edgePairs=[]//pairs of numbers representing the pairs of verticies in a cube between which there are edges
 for (var i=0;i<7;i++){//initialize edgePairs
@@ -170,9 +159,10 @@ function mapPoint(pos){//maps a point in 3d space to a point on the canvas
 }
 
   
-function getHoverCell(){
+function getHoverCell(ptrx,ptry){
   //updates the value of hoverCell
   hoverCell='';
+  ptrPos=[ptrx,ptry]
   for(var i=scells.length-1;i>=0 && hoverCell=='';i--){
     //test each cell starting with the nearest, going to the furthest away
     var pos=scells[i][0]
@@ -186,7 +176,7 @@ function getHoverCell(){
       if(x>rmax){r=j;rmax=x;}
       if(x<lmin){l=j;lmin=x;}
     }
-    if (Xold>rmax || Xold<lmin){hoverCell='';continue;}
+    if (ptrx>rmax || ptrx<lmin){hoverCell='';continue;}
     var next;
     var cur=l;
     //go round the edge of the cell anticlockwise (remember y increases downwards) from the leftmost point
@@ -202,7 +192,7 @@ function getHoverCell(){
           maxg=gradient(pMcur,pMc);
         }
       }
-      if(Xold>=pMcur[0] && gradient(pMcur,mousePos)>maxg){hoverCell='';}
+      if(ptrx>=pMcur[0] && gradient(pMcur,ptrPos)>maxg){hoverCell='';}
       //if the gradient to the mouse is greater than that to the next vertex, the mouse is on the convex hull so outside the cell
       else{cur=next;}
     }
@@ -218,7 +208,7 @@ function getHoverCell(){
           maxg=gradient(pMcur,pMc);
         }
       }
-      if(Xold<=pMcur[0] && gradient(pMcur,mousePos)>maxg){hoverCell='';}
+      if(ptrx<=pMcur[0] && gradient(pMcur,ptrPos)>maxg){hoverCell='';}
       else{cur=next;}
     }
   }
@@ -340,29 +330,120 @@ yaw(Math.PI/4)
 pitch(Math.PI/4)
 draw()
 
-mousedown=false;
-$(document).mousedown(function(e){mousedown=true;});
-$(document).mouseup(function(e){mousedown=false;});
 
-Canvas.onmousedown=function(e){
-  if(selectedCell==hoverCell && selectedCell!="")
-    click(selectedCell);
-  else selectedCell=hoverCell;}
 
-Canvas.onmousemove=function(e){
-  var posx=e.pageX-this.offsetLeft;
-  var posy=e.pageY-this.offsetTop;
-  mousePos=[posx,posy];
-  if(e.which==1 || e.buttons&1 || mousedown){
-    avp+=(e.movementY||e.webkitMovementY||e.mozMovementY||(posy-Yold))*SENSITIVITY;
-    avy+=(e.movementX||e.webkitMovementX||e.mozMovementX||(posx-Xold))*SENSITIVITY;
+//Input processing:
+//As This uses canvas anyway, I don't need to worry about IE8-
+//I wish PointerEvent was standard :(
+
+var Xold=0;
+var Yold=0;
+var hoverCell="";//the cell which the pointer is currently over, or "" if the pointer is not over any cell
+var selectedCell="";//The selected cell. If this is clicked again, it will be considered confirmation of a play
+var downCell="";//the cell which the mouse was pressed down over most recently
+
+var noClick=false;//Ignore click events after a touch
+var clrNoClick;//Timer
+
+
+pressedown=false;
+
+function act(x,y){
+  Xold=x
+  Yold=y
+  getHoverCell(x,y)
+}
+
+function press(x,y){
+  act(x,y)
+  downCell=hoverCell;
+  console.log("pressed: "+downCell)
+    if(downCell!=selectedCell){
+      selectedCell="";
+    }
+  pressedown=true;
+}
+function release(x,y){
+  act(x,y)
+  console.log("released: "+hoverCell)
+  console.log(downCell+","+hoverCell)
+  console.log((downCell==hoverCell) && (hoverCell!=""))
+  if((downCell==hoverCell) && (hoverCell!="")){
+    console.log("selecteded: "+hoverCell)
+    if(hoverCell==selectedCell){
+      click(selectedCell);
+      selectedCell="";
+    }
+    else {selectedCell=downCell;}
   }
-  Xold=posx;
-  Yold=posy;
-};
-  
-Canvas.oncontextmenu=function(e){return false;};
+  else {selectedCell="";}
+  pressedown=false;
+}
+function move(dx,dy){
+  avp+=dy*SENSITIVITY
+  avy+=dx*SENSITIVITY
+}
 
- 
+//Get coordinates of a pointer event within the canvas
+function eventX(e)
+  {return e.pageX-Canvas.offsetLeft;}
+function eventY(e)
+  {return e.pageY-Canvas.offsetTop;}
+
+
+function mousemove(e){
+  e.stopPropagation()
+  var x=eventX(e)
+  var y=eventY(e)
+  console.log(x,y)
+  if(pressedown)
+    move(e.movementX||e.webkitMovementX||e.mozMovementX||(x-Xold), e.movementY||e.webkitMovementY||e.mozMovementY||(y-Yold));
+  act(x,y)
+}
+function mousedown(e){
+  var x=eventX(e)
+  var y=eventY(e)
+  if (!noClick)press(x,y)
+}
+function mouseup(e){
+  var x=eventX(e)
+  var y=eventY(e)
+  if (!noClick)release(x,y)
+}
+
+function touchmove(e){
+  var x=eventX(e.touches[0])
+  var y=eventY(e.touches[0])
+  act(x,y)
+  if(pressedown)
+    move(e.movementX||e.webkitMovementX||e.mozMovementX||(x-Xold), e.movementY||e.webkitMovementY||e.mozMovementY||(y-Yold));
+}
+function touchdown(e){
+  var x=eventX(e.touches[0])
+  var y=eventY(e.touches[0])
+  press(x,y)
+}
+function touchup(e){
+  var x=eventX(e.touches[0])
+  var y=eventY(e.touches[0])
+  release(x,y)
+  noClick=true
+  clearTimeout(clrNoClick)
+  clrNoClick = setTimeout(function() {noClick=false;}, 500);
+}
+
+Canvas.addEventListener("mousedown",mousedown)
+Canvas.addEventListener("mouseup",mouseup)
+Canvas.addEventListener("mousemove",mousemove)
+
+if (window.touchEvent){
+Canvas.addEventListener("touchstart",touchup)
+Canvas.addEventListener("touchend",touchdown)
+Canvas.addEventListener("touchmove",touchmove)
+}
+
+$(document).mousedown(function(e){pressedown=true;});
+$(document).mouseup(function(e){pressedown=false;});
+
 </script>
 {%endblock%}

@@ -60,6 +60,6 @@ function myalert(text){
 <div id="offer" style="position:fixed;bottom:10px;right:5px;width:20%;min-width:9em">
     <span id="offertext">hey</span><br>
     <input type="button" onclick= '$.post("/"+gpath+"/respond", {answer:"yes", gameID:GameID}, function(){location.replace("/"+gpath+"/play?gameID="+GameID);});' value="yes"></input>
-    <input type="button" onclick='$.post("/"+gpath+"/respond",{answer:"no",gameID:GameID});$("#offer").hide();\' value="no"></input></div>
+    <input type="button" onclick='$.post("/"+gpath+"/respond",{answer:"no",gameID:GameID});$("#offer").hide();' value="no"></input></div>
 </body>
 </html>
