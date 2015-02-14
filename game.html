@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {%block main%}
-  <span id="0" {%if playern==0%}style="font-weight:italic" {%endif%}>{{player0}}</span> vs <span id="1"{%if playern==1%}style="font-style:italic" {%endif%}>{{player1}}</span><br>
+  <span id="0" style="color:blue{%if playern==0%};font-style:italic{%endif%}" >{{player0}}</span> vs <span id="1" style="color:red{%if playern==1%};font-style:italic{%endif%}">{{player1}}</span><br>
   <div id="game">
 {%block game%}{%endblock%}
   </div>

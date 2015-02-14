@@ -4,8 +4,8 @@
 {% block top %}Play 3D noughts and crosses{%endblock%}
 
 {% block side %}
-    Right-click and drag to spin the cube<br>
-    Left click on a cell to make a move there<br>
+    Click and drag to spin the cube.<br>
+    Press a cell once to highlight it, then press again to confirm your move.<br>
     If you can't see sliders, parameters should be between 0 and 100
 {%endblock%}
 
@@ -84,16 +84,14 @@ function show(data){//updates the data about the content of cells, which will ch
 <form name="options">
   Slipperiness:<input name="slipperiness" type="range" value=0 onchange="SLIPPERINESS=Math.sqrt(1-(opts.slipperiness.value-100)*(opts.slipperiness.value-100)/10000);"><br />
   Sensitivity:<input name="sensitivity" type="range" value=40 onchange="SENSITIVITY=Math.exp(opts.sensitivity.value/25.0-7);"><br />
-  Distance:<input name="distance" type="range" value=0 onchange="VIEWDIST=200/(opts.distance.value*1.0+150);"><br />
   <!--these options contain formulea which map the value between 1 and 100 to a value more appropriate for the variable-->
 </form>
 
 <script>
 
 var opts=document.options;
-var VIEWDIST;//distance between the viewport and the origin
+var VIEWDIST=1.5;//distance between the viewport and the origin
 var SENSITIVITY,SLIPPERINESS;
-opts.distance.onchange();
 opts.sensitivity.onchange();
 opts.slipperiness.onchange();
 
@@ -357,7 +355,6 @@ function act(x,y){
 function press(x,y){
   act(x,y)
   downCell=hoverCell;
-  console.log("pressed: "+downCell)
     if(downCell!=selectedCell){
       selectedCell="";
     }
@@ -365,11 +362,7 @@ function press(x,y){
 }
 function release(x,y){
   act(x,y)
-  console.log("released: "+hoverCell)
-  console.log(downCell+","+hoverCell)
-  console.log((downCell==hoverCell) && (hoverCell!=""))
   if((downCell==hoverCell) && (hoverCell!="")){
-    console.log("selecteded: "+hoverCell)
     if(hoverCell==selectedCell){
       click(selectedCell);
       selectedCell="";
@@ -395,7 +388,6 @@ function mousemove(e){
   e.stopPropagation()
   var x=eventX(e)
   var y=eventY(e)
-  console.log(x,y)
   if(pressedown)
     move(e.movementX||e.webkitMovementX||e.mozMovementX||(x-Xold), e.movementY||e.webkitMovementY||e.mozMovementY||(y-Yold));
   act(x,y)
@@ -414,9 +406,9 @@ function mouseup(e){
 function touchmove(e){
   var x=eventX(e.touches[0])
   var y=eventY(e.touches[0])
+  move((x-Xold),(y-Yold));
   act(x,y)
-  if(pressedown)
-    move(e.movementX||e.webkitMovementX||e.mozMovementX||(x-Xold), e.movementY||e.webkitMovementY||e.mozMovementY||(y-Yold));
+  e.preventDefault()
 }
 function touchdown(e){
   var x=eventX(e.touches[0])
@@ -424,8 +416,8 @@ function touchdown(e){
   press(x,y)
 }
 function touchup(e){
-  var x=eventX(e.touches[0])
-  var y=eventY(e.touches[0])
+  var x=eventX(e.changedTouches[0])
+  var y=eventY(e.changedTouches[0])
   release(x,y)
   noClick=true
   clearTimeout(clrNoClick)
@@ -436,11 +428,10 @@ Canvas.addEventListener("mousedown",mousedown)
 Canvas.addEventListener("mouseup",mouseup)
 Canvas.addEventListener("mousemove",mousemove)
 
-if (window.touchEvent){
-Canvas.addEventListener("touchstart",touchup)
-Canvas.addEventListener("touchend",touchdown)
+Canvas.addEventListener("touchstart",touchdown)
+Canvas.addEventListener("touchend",touchup)
 Canvas.addEventListener("touchmove",touchmove)
-}
+
 
 $(document).mousedown(function(e){pressedown=true;});
 $(document).mouseup(function(e){pressedown=false;});

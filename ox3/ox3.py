@@ -3,6 +3,7 @@
 from tools import *
 from game import Game
 from random import randrange
+from google.appengine.api.users import User
 
 from google.appengine.ext import db
 
@@ -38,9 +39,7 @@ class AI:
                         maxscore=score
                     elif score==maxscore:topcells.append((x,y,z))
         x,y,z=choice(topcells)
-        game.setAt(x,y,z,"O")
-        if game.checklines((x,y,z)):
-            game.state|=TURN|GAMEOVER
+        game.move(User("a "+self.name),str(x)+str(y)+str(z))
 
 
 class ox3(Game):
@@ -53,12 +52,7 @@ class ox3(Game):
     path="ox3"
     name="3D noughts and crosses"
     ais=[AI(diff) for diff in range(3)]+[
-        AI(([1000,2000,8100,800000],[1000,1500,8000,100000]),"g2"),
-        AI(([1065, 2116, 8089, 873459], [1020, 1288, 7366, 114046]),"g3"),
-        AI(([1467, 2447, 6402, 668297], [1318, 1434, 6435, 96130]),"g4"),
-        AI(([1033, 3340, 6538, 532192], [990, 987, 4815, 70285]),"g5"),
-        AI(([1239, 2591, 7146, 529523], [808, 1443, 4219, 71831]),"g6"),
-        AI(([1410, 2362, 6431, 689015], [699, 1656, 5501, 63965]),"gg6")]
+        AI(([1410, 2362, 6431, 689015], [699, 1656, 5501, 63965]),"evolved")]
     views=["table","perspective"]
            
     def __init__(self,*args,**kwargs):
@@ -93,7 +87,7 @@ class ox3(Game):
             self.winpos=str(x)+str(y)+str(z)
             self.state|=GAMEOVER
         
-        self.endmove()
+        if not pl.email().startswith("a "): self.endmove()
         
         
     def checklines(self,pos=None):

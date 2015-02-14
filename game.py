@@ -41,16 +41,12 @@ class Game(polymodel.PolyModel):
             return "/"+self.path+"/play?gameID="+self.key().name()+"&playerID="+e[2:]
         else: return "/"+self.path+"/play?gameID="+self.key().name()
         
-    
-    def gameover(self):
-        """returns true when the game is over"""
-        return bool(self.state&4)
 
     def move(self,player,move):
         """a player playing at a postion
         validates a move then updates the game state"""
         abstract
-        Should, call, checkturn(player), update.the.game.state, 
+        Should.call.checkturn(player), update.the.game.state, 
     
     def checkturn(self,pl):
         """checks that it is pl's turn, and returns their number (0 or 1)
@@ -71,14 +67,15 @@ class Game(polymodel.PolyModel):
         self.lastTurn=datetime.now()
         if self.state&GAMEOVER:
             win(self,int(bool(self.state&TURN)==self.lastPlayerWins))
-            pass
         elif self.state&AIP:
+            self.state^=TURN
             self.aiMove(self.timeLimit)
             if self.state&GAMEOVER:
-                 win(self,self.player1.email().startswith("a "))
+                win(self,self.player1.email().startswith("a "))
+            else:
+                self.state^=TURN
         else:
             self.state^=TURN
-            
         self.put()
 
         

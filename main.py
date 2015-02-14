@@ -141,7 +141,7 @@ class Base(webapp.RequestHandler):
 class AboutPage(webapp.RequestHandler):
     """a page for the description of a game"""
     def get(self,gpath):
-        GAME==GAMES[gpath]
+        GAME=GAMES[gpath]
         load(self,GAME.about,{"path":[("games","/"),(GAME.name,"./"),("about","about")]})
         
 
@@ -216,7 +216,7 @@ class NewGame(webapp.RequestHandler):
             diff=int(opponent[2:])
             assert diff in range(len(GAME.ais))
             gm.timeLimit=diff
-            gm.player1=User(opponent)
+            gm.player1=User("a "+GAME.ais[diff].name)
             gm.state=AIP|STARTED
             response["target"]=gm.url()
         else:
@@ -228,7 +228,7 @@ class NewGame(webapp.RequestHandler):
                 return None
             gm.player1=op.account
             message={"request":"NewGame",
-                     "player":(pl.username+" ("+str(pl.score)+")") if pl else "a player",
+                     "player":(pl.playername+" ("+str(pl.score)+")") if pl else "a player",
                      "time":time,
                      "gname":GAME.name,
                      "gpath":GAME.path,
@@ -342,7 +342,7 @@ class PlayPage(webapp.RequestHandler):
             self.redirect("/")
             return None
         if not gm.state&STARTED:
-            logging.error("acessing a game which has not started")
+            logging.error("accessing a game which has not started")
             crash
         
         if pl:
@@ -356,9 +356,9 @@ class PlayPage(webapp.RequestHandler):
             if gm.player0.email()=="p "+pnum: playern=0;opp=gm.player1
             elif gm.player1.email()=="p "+pnum: playern=1;opp=gm.player0
             else:return None
-            tvals = {"player":"you","playerID":pnum}
+            tvals = {"player":"You","playerID":pnum}
             
-        if opp.email().startswith("p "): tvals["opponent"]="opponent"
+        if opp.email().startswith("p "): tvals["opponent"]="Opponent"
         elif gm.state&AIP: tvals["opponent"]="AI"
         else: tvals["opponent"]=getPlayer(opp).playername
         
@@ -450,11 +450,7 @@ class ClearGames(webapp.RequestHandler):
     def get(self):
         games=db.GqlQuery("SELECT __key__ "
                         "FROM Game "
-                        "WHERE started = False ")
-        db.delete(games)
-        games=db.GqlQuery("SELECT __key__ "
-                        "FROM Game "
-                        "WHERE winpos > '' ")
+                        "WHERE state >= "+str(GAMEOVER))
         db.delete(games)
 
 
@@ -488,7 +484,7 @@ gameserv=[
 services=[
     ('/changename', ChangeName),
     ('/newchannel', ChannelCreator),
-    ('clr', ClearGames)]
+    ('/clr', ClearGames)]
 
 allpages= [("/",Games)] + services + [
     ("/(.+)/"+page, handler)

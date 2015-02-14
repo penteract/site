@@ -22,7 +22,8 @@
         {%endfor%}
         <br>
         your nickname: <input type="text" id="name" value="{{name}}" style="width:6em"></input> 
-        <input type="button" onclick="send();" value="change name"></input>
+        <input type="button" onclick="send();" value="change name"></input><br>
+		May only contain lower case letters and must be shorter than 20 characters.
         <br><br>
 {%else%}
 <div id="games" style="float:left;min-width:10em;">

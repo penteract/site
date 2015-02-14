@@ -8,7 +8,6 @@ function openChannel(token){
   var socket = channel.open();
   socket.onmessage = function(m){
     var message=JSON.parse(m.data)
-    console.log(message)
     if(message.request=="NewGame"){
       GameID=message.gameID;
       gname=message.gname
