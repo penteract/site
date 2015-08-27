@@ -17,7 +17,7 @@ import logging
 from django.utils import simplejson
 sjd=simplejson.dumps
 
-def randstr(len=16):
+def randstr(len=16):#There will not be collisions
     return "".join([choice(digits+ascii_lowercase) for n in range(len)])
 
 OFFLINE=120#time in seconds after last action after which the player is considered offline

@@ -10,7 +10,7 @@ from ensquared.ensquared import ensquared
 GAMES={"ox3":ox3,
        "ensquared":ensquared}
 
-
+rgames={g:"" for g in GAMES}#I'm sorry, a non-constant global variable :(
 
 import os
 import datetime
@@ -42,94 +42,27 @@ class Games(webapp.RequestHandler):
     """Shows a page where a user can look at the games they're playing and start new ones.
     They do not have to be logged in."""
     def get(self):
-        pl = getCurrentPlayer()
-        if pl:
-            
-            ##to be changed
-            games0=db.GqlQuery("SELECT *"
-                               "FROM Game "
-                               "WHERE player0 = :1 AND state>=:2 AND state<:3",
-                               pl.account,STARTED,GAMEOVER)
-            games=[{"url":game.url(None),
-                    0:pl.playername,
-                    1:"AI" if game.state&2 else getPlayer(game.player1),
-                    "turn": game.state&TURN,
-                    "pl":0}
-                    for game in games0]
-            games1=db.GqlQuery("SELECT player0, state "
-                               "FROM Game "
-                               "WHERE player1 = :1 AND state>=:2 AND state<:3",
-                               pl.account,STARTED,GAMEOVER)
-            games+=[{"url":game.url(None),
-                    0:"AI" if game.state&2 else getPlayer(game.player0),
-                    1:pl.playername,
-                    "turn": game.state&TURN,
-                    "pl":1}
-                    for game in games1]
-            
-            players=db.GqlQuery("SELECT score,playername "
-            "FROM Player "
-            "WHERE lastOnline > :1 "
-            "ORDER BY lastOnline DESC LIMIT 10",
-            datetime.now()-timedelta(seconds=120))
-            
-            tvals = {"name":pl.playername,
-                     "score":pl.score,
-                     "chtoken":pl.token,
-                     "games":games,
-                     "players":players}
-        else:
-            tvals={"loginurl":users.create_login_url(self.request.uri)}
-        tvals.update({"path":[("/","games")],
-        "game_list":list((ob.path,ob.name) for ob in GAMES.values() if ob)})
-        tvals["links"]=[(users.create_logout_url(self.request.uri),"logout")] if pl else []
+        pl = self.request.get("playerID") or randstr()
+        tvals={"path":[("/","games")],
+            "game_list":list((GAME.path,GAME.name,list((n,ai.name) for n,ai in enumerate(GAME.ais))) for GAME in GAMES.values() if GAME),
+            "playerid":pl
+        }
+        tvals["links"]=[("/about","about")]
         
         load(self,'games.html',tvals)
         
-##
-class HighScores(webapp.RequestHandler):
-    """shows a list of highscores"""
-    def get(self):
-        pl = getCurrentPlayer()
-        if pl:
-            tvals={"player":{"name":pl.username,
-                             "id":pl.account.nickname(),
-                             "score":pl.score},
-                   "logouturl":users.create_logout_url(self.request.uri),
-                   "chtoken":pl.token}
-        else:
-            tvals={"player":None,"loginurl":users.create_login_url(self.request.uri)}
-        
-        players=db.GqlQuery("SELECT username,score,account "
-                            "FROM Player "
-                            "ORDER BY score DESC LIMIT 10")
-        tvals["players"]=[{"name":p.username,
-            "score":p.score,
-            "id":p.account.nickname()} for p in players]
-        template = jinja_environment.get_template('highscore.html')
-        self.response.out.write(template.render(tvals))
 
 
 
-class ChangeName(webapp.RequestHandler):
-    """changes a user's name"""
-    @db.transactional
-    def post(self):
-        pl=getCurrentPlayer(put=False)
-        if not pl: return None
-        pl.changeName(self.request.get("name"),put=False)
-        pl.put()
-
-##
-class ChannelCreator(webapp.RequestHandler):
-    """creates a new token when the old one runs out - susceptible to abuse"""
-    @db.transactional
-    def post(self):
-        pl=getCurrentPlayer(put=False)
-        if not pl: return None
-        pl.token=channel.create_channel(pl.account.nickname())
-        pl.put()
-        self.response.out.write(pl.token)
+# class ChannelCreator(webapp.RequestHandler):
+    # """creates a new token when the old one runs out - susceptible to abuse"""
+    # @db.transactional
+    # def post(self):
+        # pl=getCurrentPlayer(put=False)
+        # if not pl: return None
+        # pl.token=channel.create_channel(pl.account.nickname())
+        # pl.put()
+        # self.response.out.write(pl.token)
 
 class Base(webapp.RequestHandler):
     """a handler for the page "/gpath/" """
@@ -150,15 +83,7 @@ class NewGamePage(webapp.RequestHandler):
     def get(self,gpath):
         GAME=GAMES[gpath]
         pl=getCurrentPlayer()
-        if pl:
-            tvals = {"name":pl.playername,
-                     "chtoken":pl.token}
-        else:tvals={}
-        players=db.GqlQuery("SELECT * "
-                            "FROM Player "
-                            "WHERE lastOnline > :1 "
-                            "ORDER BY lastOnline DESC LIMIT 10",
-                            datetime.now()-timedelta(seconds=120))
+        tvals={}
         opps = [{"id":p.key().name(),
                  "name":p.playername,
                  "score":p.score
@@ -183,61 +108,51 @@ class NewGame(webapp.RequestHandler):
     """Handles a request to start a game:
     creates the Game object, and performs other actions depending on opponent type"""
     @db.transactional(xg=True)
-    def post(self,gpath):
+    def get(self,gpath):
         GAME=GAMES[gpath]
+        pl = self.request.get("playerID") or randstr()
+        usr=User("p "+pl)
+        kname=randstr()
         
-        pl=getCurrentPlayer()
-        
-        response={"gameID":randstr()}
-        if pl:
-            usr=pl.account
-        else:
-            response.update({"playerID":randstr()})
-            usr=User("p "+response["playerID"])
-        
-        turn=self.request.get("turn")
-        time=self.request.get("time")
-        kname=response["gameID"]
+        turn=self.request.get("turn") or "true"
+        time=self.request.get("time") or 120
         state=0
-        response.update({"request":"goto",
-                         "target":"wait?gameID="+kname+("" if pl else "&playerID="+response["playerID"])})
         
-        gm=GAME(player0=usr,
-                timeLimit=int(self.request.get("time")),
-                state=0,
-                key_name=response["gameID"])
         
-        opponent=self.request.get("opponent")
-        if opponent=="y":
-            #newgame, url, stuff
-            
-            gm.player1=User("x ")
-        elif opponent.startswith("a "):
-            diff=int(opponent[2:])
-            assert diff in range(len(GAME.ais))
-            gm.timeLimit=diff
-            gm.player1=User("a "+GAME.ais[diff].name)
-            gm.state=AIP|STARTED
-            response["target"]=gm.url()
+        opponent=self.request.get("opp")
+        if opponent=="r" and rgames[gpath]:
+                kname=rgames[gpath]
+                rgames[gpath]=""
+                gm=GAME.get_by_key_name(kname)
+                gm.player1=usr
+                gm.state|=STARTED
+                gm.put()
+                self.redirect(gm.url(1))
         else:
-            #### needs more work
+            gm=GAME(player0=usr,
+                    timeLimit=time,
+                    state=0,
+                    key_name=kname)
+            if opponent=="r":
+                    gm.player1=User("x ");
+                    rgames[gpath]=kname
+                    redirectUrl="wait?gameID="+kname+"&playerID="+pl
+            elif opponent=="y":
+                #newgame, url, stuff
+                gm.player1=User("x "),
+                redirectUrl="wait?gameID="+kname+"&playerID="+pl
+            elif opponent.startswith("a"):
+                diff=int(opponent[1:])
+                assert diff in range(len(GAME.ais))
+                gm.timeLimit=diff
+                gm.player1=User("a "+str(diff))
+                gm.state=AIP|STARTED
+                redirectUrl=gm.url()
+            else: raise HttpError(400)
             
-            op=Player.get_by_key_name(opponent)
-            if not op:
-                self.response.out.write("error: opponent not found")
-                return None
-            gm.player1=op.account
-            message={"request":"NewGame",
-                     "player":(pl.playername+" ("+str(pl.score)+")") if pl else "a player",
-                     "time":time,
-                     "gname":GAME.name,
-                     "gpath":GAME.path,
-                     "gameID":response["gameID"]}
-            op.send(message)
-            
-        if turn=="false": gm.endmove()#updates state and plays for the AI
-        gm.put()
-        self.response.out.write(sjd(response))
+            if turn=="false": gm.endmove()#updates state and plays for the AI
+            gm.put()
+            self.redirect(redirectUrl)
 
 class StartGame(webapp.RequestHandler):
     """starts a game between the player who created the url and the player accessing this page"""
@@ -462,8 +377,9 @@ class ClearGames(webapp.RequestHandler):
 gamepages=[("",Base),
            ("setup",NewGamePage),
            ("startgame",StartGame),
+           ('new', NewGame),
            ("play",PlayPage),
-           ("highscores",HighScores),
+           #("highscores",HighScores),
            ("about",AboutPage),
            ("wait",WaitPage)]
 
@@ -474,7 +390,6 @@ Pages=[("/", "Games")] + [
     for page,handler in gamepages]
 
 gameserv=[
-    ('newgame', NewGame),
     ('respond', Response),
     ('checkrequest', CheckRequest),
     ('makemove', MakeMove),
@@ -482,8 +397,8 @@ gameserv=[
     ('msg', SendMessage)]
 
 services=[
-    ('/changename', ChangeName),
-    ('/newchannel', ChannelCreator),
+    #('/changename', ChangeName),
+    #('/newchannel', ChannelCreator),
     ('/clr', ClearGames)]
 
 allpages= [("/",Games)] + services + [

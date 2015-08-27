@@ -13,15 +13,16 @@ handlers:
 
 
 - url: /favicon\.ico
-  static_files: favicon.ico
-  upload: favicon\.ico
+  static_files: staticfiles/favicon.ico
+  upload: staticfiles/favicon\.ico
   
 - url: /staticfiles
   static_dir: staticfiles
   
-#- url: /
-#  static_files: index.html
-#  upload: index\.html
+ 
+- url: /robots.txt
+  static_files: staticfiles/robots.txt
+  upload: staticfiles/robots\.txt
   
 - url: /clr
   script: main.app
@@ -32,7 +33,7 @@ handlers:
 
 libraries:
 - name: django
-  version: "1.2"
+  version: "1.5"
   
 - name: jinja2
   version: "2.6"

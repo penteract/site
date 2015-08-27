@@ -4,7 +4,8 @@
 {% block top %}Play 3D noughts and crosses{%endblock%}
 
 {% block side %}
-You must turn each turn, and not hit anything or go off the edge
+You must turn each turn, and not hit anything or go off the edge<br>
+Use arrow keys or tap or click the appropriate edge
 {%endblock%}
 
 
@@ -42,12 +43,12 @@ function show(data){
   }
 
   ctx.lineWidth=4
-  p0=data.p0
-  p1=data.p1
+  var p0=data.p0
+  var p1=data.p1
   
   ctx.beginPath()
-  x=sz*SIZE/2
-  y=x
+  var x=sz*SIZE/2
+  var y=x
   ctx.moveTo(x,y)
   ctx.strokeStyle="blue"
   for(a=0;a<p0.length;a++){
@@ -77,6 +78,8 @@ function show(data){
   }
   ctx.stroke()
   
+  var p=[p0,p1][player]
+  dir=perpendicular[p[p.length-1]]
 }
 
 function drawX(ctx,x,y,z){
@@ -122,6 +125,7 @@ for(x=1;x<SIZE;x++){
     
 
 function kdown(e){
+    $("#abox").hide()
     k=e.keyCode-37
     //This should just be arrow keys
     if(k>=0 && k<4){
@@ -130,6 +134,34 @@ function kdown(e){
 }
 
 $(document).keydown(kdown)
+
+function eventX(e)
+  {return e.pageX-c.offsetLeft;}
+function eventY(e)
+  {return e.pageY-c.offsetTop;}
+
+function onclick(e){
+  var x=eventX(e)
+  var y=eventY(e)
+  if(dir=="UD"){
+    if(y<c.height/3)click("U")
+    if(y>c.height*2/3)click("D")
+  }
+  if(dir=="LR"){
+    if(x<c.width/3)click("L")
+    if(x>c.width*2/3)click("R")
+  }
+}
+perpendicular={"U":"LR", "D":"LR", "L":"UD", "R":"UD"}
+
+c.addEventListener("click",onclick)
+/*Canvas.addEventListener("mouseup",mouseup)
+Canvas.addEventListener("mousemove",mousemove)
+
+Canvas.addEventListener("touchstart",touchdown)
+Canvas.addEventListener("touchend",touchup)
+Canvas.addEventListener("touchmove",touchmove)*/
+
 
 </script>
     

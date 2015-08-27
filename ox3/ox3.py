@@ -39,7 +39,7 @@ class AI:
                         maxscore=score
                     elif score==maxscore:topcells.append((x,y,z))
         x,y,z=choice(topcells)
-        game.move(User("a "+self.name),str(x)+str(y)+str(z))
+        game.move(game.player1,str(x)+str(y)+str(z))
 
 
 class ox3(Game):

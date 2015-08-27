@@ -27,9 +27,9 @@ function process(m){
         }
         if((m.state&GAMEOVER)!=(lastj.state&GAMEOVER)){
             myalert("game over: "+m.state&DRAW?"its a draw":
-                (m.state&TIMEUP ?"time up":"you either lost or won"))
+                ((m.state&TURN)==player?"congratulations, you won":"sorry, you lost"))
         }
-        $("#"+m.state&TURN).addClass("turn")
+        $("#"+(m.state&TURN)).addClass("turn")
         $("#"+(1-m.state&TURN)).removeClass("turn")
         
         show(m);
@@ -47,7 +47,7 @@ function process(m){
 t=500
 function poller(){
     $.get("getgame",{"gameID":gameID},updatet)
-    setTimeout(poller,t);t+=1000
+    POLLER=setTimeout(poller,t);t+=1000
 }
 
 function updatet(m){

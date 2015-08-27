@@ -15,7 +15,8 @@ class Game(polymodel.PolyModel):
     timeCreated = db.DateTimeProperty(auto_now_add=True)
     player0=db.UserProperty()#the player who started the game
     player1=db.UserProperty()
-    # "a AI" is the 'email' of any AI
+    # "a <difficulty>" is the 'email' of any AI
+    # an AI is always player1
     # players which do not have accounts are stored with an address 
     # starting "p " followed by a random string
     timeLimit=db.IntegerProperty()#used as the difficulty in AI games
@@ -23,15 +24,16 @@ class Game(polymodel.PolyModel):
     lastMessageTime=db.DateTimeProperty(auto_now_add=True)
     lastTurn=db.DateTimeProperty(auto_now_add=True)
     state=db.IntegerProperty(default=0)
-    # bitstring: 0btdwsap p=turn, a=ai,s=started, w=gameover d=draw t=ttimeup
-    # eg 0b01101 means player1 (as opposed to player0) has won
+    # bitstring: 0btdwsap p=turn, a=ai,s=started, w=gameover d=draw t=timeup
+    # if the game is over, p represents the number of the player who's turn it is
+    # eg 0b001100 means player1 (as opposed to player0) has won
     
     #Variables expected in a subclass:
     #lastPlayerWins: bool; indicates if the last player to move has won or lost the game
     #path: str; a short url-safe identifier
     #name: str; possibly longer name, displayed to users
     
-        
+    
     def url(self,player=0):
         """a url for playing the game"""
         if player==0: e=self.player0.email()
@@ -66,12 +68,16 @@ class Game(polymodel.PolyModel):
         Checks if someone won, plays for the AI, sets the turn."""
         self.lastTurn=datetime.now()
         if self.state&GAMEOVER:
-            win(self,int(bool(self.state&TURN)==self.lastPlayerWins))
+            #win(self,int(bool(self.state&TURN)==self.lastPlayerWins))
+            if not self.lastPlayerWins:
+                self.state^=TURN
         elif self.state&AIP:
             self.state^=TURN
-            self.aiMove(self.timeLimit)
+            self.aiMove(int(self.player1.email()[2:]))
             if self.state&GAMEOVER:
-                win(self,self.player1.email().startswith("a "))
+                #win(self,self.player1.email().startswith("a "))##wrong
+                if not self.lastPlayerWins:
+                    self.state^=TURN
             else:
                 self.state^=TURN
         else:
@@ -95,8 +101,8 @@ class Game(polymodel.PolyModel):
         """checks that the player whose turn it is has not run out of time"""
         if self.state&(AIP|GAMEOVER):return True
         if datetime.now()>self.lastTurn+timedelta(seconds=self.timeLimit):
-            self.state|=GAMEOVER
-            win(self,1-self.state&TURN,timeup=True)
+            self.state|=GAMEOVER|TIMEUP
+            #win(self,1-self.state&TURN,timeup=True)
             return False
         return True
         
@@ -112,7 +118,7 @@ class Game(polymodel.PolyModel):
     
         
 
-
+####
 def game_key(gameNum):
     """Constructs a Datastore key for a GameData entity with a given id."""
     #I really should know if I'm working with a key or a key name
@@ -135,6 +141,7 @@ def win(game,winner,timeup=False):
         pls[loser].score-=dScore
         for pl in pls:pls[pl].put()
         
+
 class Response():
     """handles the response to a game request"""
     

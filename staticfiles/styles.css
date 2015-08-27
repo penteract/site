@@ -15,6 +15,15 @@ body {background-color:#FFFFFF;
 .side{min-width:10em;
 	text-align:right;
 	clear:both;}
+	
+.b{background:yellow;
+	border:5px solid white;
+	border-radius:10px;
+    padding: 10px;}
+	
+.b a{text-decoration: none;}
+.b a:hover{text-decoration: underline;}
+.b ul{list-style-type: none}
 
 @media (min-width:35em){
 #main {float:left;
@@ -48,7 +57,7 @@ body {background-color:#FFFFFF;
 	padding:1em;
 	font-weight:bold;
 	position:fixed;
-	width:100px;
+	width:150px;
 	left:50%;
 	top:40%;
 	margin-left:-50px;}
