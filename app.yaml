@@ -1,5 +1,5 @@
 application: 3d-o-x
-version: 3b2
+version: 3b3
 runtime: python27
 api_version: 1
 threadsafe: true
@@ -8,6 +8,7 @@ handlers:
 #normalise case
 #At some point I am going to be tripped up by this
 #doesn't work on post
+#doesn't work on post
 - url: /[^?]*[A-Z].*
   script: case.app
 
@@ -15,6 +16,10 @@ handlers:
 - url: /favicon\.ico
   static_files: staticfiles/favicon.ico
   upload: staticfiles/favicon\.ico
+  
+- url: /3sphere
+  static_files: staticfiles/3-sphere.html
+  upload: staticfiles/3-sphere\.html
   
 - url: /staticfiles
   static_dir: staticfiles

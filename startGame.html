@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Starting your game...{%endblock%}
+{% block top %}Starting your game...{%endblock%}
+
+{% block main %}
+Starting your game...
+{%endblock%}
+
+{%block wholeside%}
+{%endblock%}
+
+{%block scripts%}
+{{super()}}
+<script>
+$.post('startgamepost',
+{gameID:"{{gameID}}" },
+function(m){
+	location.assign(m);
+});
+</script>
+{%endblock%}

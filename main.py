@@ -108,39 +108,40 @@ class NewGame(webapp.RequestHandler):
     """Handles a request to start a game:
     creates the Game object, and performs other actions depending on opponent type"""
     @db.transactional(xg=True)
-    def get(self,gpath):
+    def post(self,gpath):
         GAME=GAMES[gpath]
         pl = self.request.get("playerID") or randstr()
         usr=User("p "+pl)
         kname=randstr()
         
         turn=self.request.get("turn") or "true"
-        time=self.request.get("time") or 120
+        time=self.request.get("time") or 600
         state=0
         
         
         opponent=self.request.get("opp")
         if opponent=="r" and rgames[gpath]:
-                kname=rgames[gpath]
-                rgames[gpath]=""
-                gm=GAME.get_by_key_name(kname)
-                gm.player1=usr
-                gm.state|=STARTED
-                gm.put()
-                self.redirect(gm.url(1))
+            kname=rgames[gpath]
+            rgames[gpath]=""
+            gm=GAME.get_by_key_name(kname)
+            gm.player1=usr
+            gm.state|=STARTED
+            gm.put()
+            self.response.out.write(gm.url(1))
+            return None
         else:
             gm=GAME(player0=usr,
                     timeLimit=time,
                     state=0,
                     key_name=kname)
             if opponent=="r":
-                    gm.player1=User("x ");
+                    gm.player1=User("x ")
                     rgames[gpath]=kname
-                    redirectUrl="wait?gameID="+kname+"&playerID="+pl
+                    redirectUrl="/"+gpath+"/wait?gameID="+kname+"&playerID="+pl
             elif opponent=="y":
                 #newgame, url, stuff
-                gm.player1=User("x "),
-                redirectUrl="wait?gameID="+kname+"&playerID="+pl
+                gm.player1=User("x ")
+                redirectUrl="/"+gpath+"/wait?gameID="+kname+"&playerID="+pl
             elif opponent.startswith("a"):
                 diff=int(opponent[1:])
                 assert diff in range(len(GAME.ais))
@@ -151,25 +152,31 @@ class NewGame(webapp.RequestHandler):
             else: raise HttpError(400)
             
             if turn=="false": gm.endmove()#updates state and plays for the AI
-            gm.put()
-            self.redirect(redirectUrl)
+        gm.put()
+        self.response.out.write(redirectUrl)
+
 
 class StartGame(webapp.RequestHandler):
-    """starts a game between the player who created the url and the player accessing this page"""
+    """starts a game between the player who created the url and the player accessing this page
+    basically just does a post request so that Facebook won't trigger it"""
     def get(self,gpath):
+        GAME=GAMES[gpath]
+        pl=getCurrentPlayer()
+        gmNum=self.request.get("gameID")
+        load(self,"startGame.html",{"gameID":gmNum})
+
+class StartGamePost(webapp.RequestHandler):
+    """starts a game between the player who created the url and the player accessing this page"""
+    def post(self,gpath):
         GAME=GAMES[gpath]
         pl=getCurrentPlayer()
         gmNum=self.request.get("gameID")
         gm=GAME.get_by_key_name(gmNum)
         assert gm.player1.email()=="x "
-        if not pl:
-            pNum=randstr()
-            gm.player1=User("p "+pNum)
-            self.redirect(str("play?gameID="+gmNum+"&playerID="+pNum))
-        else:
-            gm.player1=pl.account
-            assert gm.player0!=gm.player1##
-            self.redirect(str("play?gameID="+gmNum))
+        assert not pl
+        pNum=randstr()
+        gm.player1=User("p "+pNum)
+        self.response.out.write("play?gameID="+gmNum+"&playerID="+pNum)
         gm.state|=STARTED
         gm.lastTurn=datetime.now()
         gm.put()
@@ -377,6 +384,7 @@ class ClearGames(webapp.RequestHandler):
 gamepages=[("",Base),
            ("setup",NewGamePage),
            ("startgame",StartGame),
+           ("startgamepost",StartGamePost),
            ('new', NewGame),
            ("play",PlayPage),
            #("highscores",HighScores),

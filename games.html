@@ -10,10 +10,10 @@ Start a game of:
 <li>{{gname}} against
 <ul>
 {%for ai,ainame in AIS%}
-<div class="b"><a href="/{{gpath}}/new?opp=a{{ai}}&player={{playerid}}"><li>{{ainame}}</li></a></div>
+<div class="b"><a onclick='start("/{{gpath}}/new?opp=a{{ai}}&player={{playerid}}")'><li>{{ainame}}</li></a></div>
 {%endfor%}
-<div class="b"><a href="/{{gpath}}/new?opp=r&player={{playerid}}"><li>next or previous person to press this button</li></a></div>
-<div class="b"><a href="/{{gpath}}/new?opp=y&player={{playerid}}"><li>someone you can send a url to</li></a></div>
+<div class="b"><a onclick='start("/{{gpath}}/new?opp=r&player={{playerid}}")'><li>next or previous person to press this button</li></a></div>
+<div class="b"><a onclick='start("/{{gpath}}/new?opp=y&player={{playerid}}")'><li>someone you can send a url to</li></a></div>
 </ul></li>
 {%endfor%}
 </ul>
@@ -28,8 +28,11 @@ This site lets you play some 2-player games against people at other machines. Fo
 {%block scripts%}
 {{super()}}
 <script>
-function send() {
-  $.post('/changename',{name:$("#name").val()});
+function start(url) {
+  $.post(url,
+  function(m){
+    location.assign(m);
+  });
 }
 </script>
 {%endblock%}
