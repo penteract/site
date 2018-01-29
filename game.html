@@ -23,12 +23,12 @@
 var gameID='{{gameID}}';
 
 {%if playerID is defined%}
-var playerID='{{playerID}}'
+  var playerID='{{playerID}}'
   {%if opponent!="AI"%}
-  setTimeout(poller,t);t+=2000
+    POLLER = setTimeout(poller,t);t+=2000
   {%endif%}
 {%else%}
-var playerID=""
+  var playerID=""
 {%endif%}
 player={{playern}}//0 or 1
 lastm='{{data}}'
@@ -36,4 +36,3 @@ lastj=JSON.parse(lastm)
 $(function(){process(JSON.parse(lastm));});
 </script>
 {%endblock%}
-

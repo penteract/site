@@ -1,5 +1,3 @@
-application: 3d-o-x
-version: 3b3
 runtime: python27
 api_version: 1
 threadsafe: true
@@ -16,30 +14,29 @@ handlers:
 - url: /favicon\.ico
   static_files: staticfiles/favicon.ico
   upload: staticfiles/favicon\.ico
-  
+
 - url: /3sphere
   static_files: staticfiles/3-sphere.html
   upload: staticfiles/3-sphere\.html
-  
+
 - url: /staticfiles
   static_dir: staticfiles
-  
- 
+
+
 - url: /robots.txt
   static_files: staticfiles/robots.txt
   upload: staticfiles/robots\.txt
-  
+
 - url: /clr
   script: main.app
   login: admin
-  
+
 - url: /.*
   script: main.app
 
 libraries:
 - name: django
   version: "1.5"
-  
+
 - name: jinja2
   version: "2.6"
-  

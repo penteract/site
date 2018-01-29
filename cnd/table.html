@@ -1,0 +1,82 @@
+{% extends "game.html" %}
+
+{% block title %}Codenames Duet - play{%endblock%}
+{% block top %}Play Codenames Duet{%endblock%}
+
+{% block side %}
+    Your opponent sees a similar layout,<br>
+    3 tiles are green for both, 1 is black for both and each of you can see 1 black tile that is green for the other
+{%endblock%}
+
+
+{%block styles%}
+{{super()}}
+<style type="text/css">
+table.sub
+{
+width: 100%;
+height: 500px;
+border-width: 0 0 2% 2%;
+border-spacing: 0;
+border-style: solid;
+border-color: white;
+}
+.sub td
+{
+border-radius: 25%;
+border-width: 2% 2% 0 0;
+border-style: solid;
+border-color: white;
+}
+
+p.in-cell
+{
+text-align: center;
+margin: 0 0 0 0;
+}
+
+td.G
+{
+background-color: green;
+}
+td.W
+{
+background-color: lightsalmon;
+}
+td.B
+{
+background-color: black;
+}
+</style>
+{%endblock%}
+
+{%block scripts%}
+{{super()}}
+<script>
+//Helper functions
+
+//End of helper functions
+
+//The interface for a game
+function show(data){
+  for(y=0;y<5;y++){
+    for(x=0;x<5;x++){
+      $("#t"+x+y).addClass(data.board[y*10+x*2+player]);
+    }
+  }
+}
+clearTimeout(POLLER)
+</script>
+{%endblock%}
+
+{%block game%}
+<table class='sub'>
+{% for y in range(5) %}
+  <tr>
+  {% for x in range(5) %}
+    <td id={{ "t"~x~y }}><p id={{ "p"~x~y }} class=in-cell> </p></td>
+  {% endfor %}
+  </tr>
+{% endfor %}
+</table>
+{%endblock%}

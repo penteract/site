@@ -5,10 +5,12 @@ from game import Game
 from players import Player,getCurrentPlayer,getPlayer,getCurrentUser
 from ox3.ox3 import ox3
 from ensquared.ensquared import ensquared
+from cnd.codeNamesDuet import codeNamesDuet
 
 #{path:object}
 GAMES={"ox3":ox3,
-       "ensquared":ensquared}
+       "ensquared":ensquared,
+       "cnd":codeNamesDuet}
 
 rgames={g:"" for g in GAMES}#I'm sorry, a non-constant global variable :(
 
@@ -48,9 +50,9 @@ class Games(webapp.RequestHandler):
             "playerid":pl
         }
         tvals["links"]=[("/about","about")]
-        
+
         load(self,'games.html',tvals)
-        
+
 
 
 
@@ -76,7 +78,7 @@ class AboutPage(webapp.RequestHandler):
     def get(self,gpath):
         GAME=GAMES[gpath]
         load(self,GAME.about,{"path":[("games","/"),(GAME.name,"./"),("about","about")]})
-        
+
 
 class NewGamePage(webapp.RequestHandler):
     """shows a page where the user can select options for the game they want to start"""
@@ -113,12 +115,12 @@ class NewGame(webapp.RequestHandler):
         pl = self.request.get("playerID") or randstr()
         usr=User("p "+pl)
         kname=randstr()
-        
+
         turn=self.request.get("turn") or "true"
         time=self.request.get("time") or 600
         state=0
-        
-        
+
+
         opponent=self.request.get("opp")
         if opponent=="r" and rgames[gpath]:
             kname=rgames[gpath]
@@ -150,7 +152,7 @@ class NewGame(webapp.RequestHandler):
                 gm.state=AIP|STARTED
                 redirectUrl=gm.url()
             else: raise HttpError(400)
-            
+
             if turn=="false": gm.endmove()#updates state and plays for the AI
         gm.put()
         self.response.out.write(redirectUrl)
@@ -180,7 +182,7 @@ class StartGamePost(webapp.RequestHandler):
         gm.state|=STARTED
         gm.lastTurn=datetime.now()
         gm.put()
-        
+
 
 
 
@@ -211,7 +213,7 @@ class Response(webapp.RequestHandler):
 
 class WaitPage(webapp.RequestHandler):
     """used when waiting for another player to respond to a game"""
-    
+
     def get(self,gpath):
         GAME=GAMES[gpath]
         pl=getCurrentPlayer()
@@ -223,19 +225,19 @@ class WaitPage(webapp.RequestHandler):
                       "gameID":kname,
                       "path":[("/","all games"),
                                ("/"+gpath+"/",GAME.name)]})
-        
+
         if gm.player1.email().startswith("x "):
             tvals["url"]="%s/%s/startgame?gameID=%s"%(self.request.host,gpath,kname)
         load(self,"wait.html",tvals)
-    
+
 
 ## now used more for polling
-class CheckRequest(webapp.RequestHandler): 
+class CheckRequest(webapp.RequestHandler):
     """tells a player if the opponent is online, also polls to check if the game has started"""
     def get(self,gpath):
         gmNum=self.request.get("gameID")
         gm=Game.get_by_key_name(gmNum)
-        
+
         if not gm:
             self.response.out.write("no")
             return None
@@ -248,7 +250,7 @@ class CheckRequest(webapp.RequestHandler):
             self.response.out.write("no")
             db.delete(gm)
         else: message.update({"request":"wait"})
-        self.response.out.write(sjd(message))    
+        self.response.out.write(sjd(message))
 
 
 
@@ -266,7 +268,7 @@ class PlayPage(webapp.RequestHandler):
         if not gm.state&STARTED:
             logging.error("accessing a game which has not started")
             crash
-        
+
         if pl:
             tvals = {"player":pl.playername,
                      "chtoken":pl.token}
@@ -279,15 +281,15 @@ class PlayPage(webapp.RequestHandler):
             elif gm.player1.email()=="p "+pnum: playern=1;opp=gm.player0
             else:return None
             tvals = {"player":"You","playerID":pnum}
-            
+
         if opp.email().startswith("p "): tvals["opponent"]="Opponent"
         elif gm.state&AIP: tvals["opponent"]="AI"
         else: tvals["opponent"]=getPlayer(opp).playername
-        
+
         tvals["playern"]=playern
         tvals["player0"]=tvals["opponent"] if playern else tvals["player"]
         tvals["player1"]=tvals["player"] if playern else tvals["opponent"]
-        
+
         pagetype=self.request.get("pageType")
         if not pagetype:pagetype=gm.views[0]
         tvals["gameID"]=gmNum
@@ -298,7 +300,7 @@ class PlayPage(webapp.RequestHandler):
                          ("" if pl else "&playerID="+pnum),
                          ptype+" view")
                        for ptype in gm.views if ptype!=pagetype]
-        
+
         load(self,"/%s/%s.html"%(gpath,pagetype),tvals)
 
 
@@ -320,7 +322,7 @@ class MakeMove (webapp.RequestHandler):
         except InvalidInput as e:
             self.response.out.write(e.msg)
             return None
-        
+
         dat=sjd(gm.getData())
         gm.tellPlayers(dat)
         self.response.out.write(dat)
@@ -349,23 +351,23 @@ class SendMessage(webapp.RequestHandler):
         gameID = game_key(gmNum)
         gm=GameData.get(gameID)
         if not gm: return None
-        
+
         players=[gm.playerX, gm.playerO]
         if pl.account not in players: return None
         content=self.request.get('msg')
         if not content:return None
-        
+
         m=Message(parent=gm)
         m.sender=pl.account
         m.content=content
         m.put()
-        
+
         chmessage={"request":"message",
                    "content":"\n<b>"+pl.username+"</b>: "+content,
                    "gameID":gm.key().name()}
         for player in players:
             channel.send_message(player.nickname(),sjd(chmessage))
-        
+
 
 class ClearGames(webapp.RequestHandler):
     """clear all game data"""
@@ -414,6 +416,5 @@ allpages= [("/",Games)] + services + [
     for page,handler in gamepages+gameserv]
 
 ##print(allpages)
-    
+
 app = webapp.WSGIApplication(allpages, debug=True)
-        
