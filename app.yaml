@@ -19,6 +19,11 @@ handlers:
   static_files: staticfiles/3-sphere.html
   upload: staticfiles/3-sphere\.html
 
+- url: /cnd
+  mime_type: text/html
+  static_files: staticfiles/cnd.html
+  upload: staticfiles/cnd\.html
+
 - url: /staticfiles
   static_dir: staticfiles
 

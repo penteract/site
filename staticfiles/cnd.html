@@ -1,17 +1,16 @@
-<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
 <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
 <title>Codenames Duet - play</title>
 
-<link rel="stylesheet" type="text/css" href="styles.css">
+<link rel="stylesheet" type="text/css" href="/staticfiles/styles.css">
 <style type="text/css">
 table.sub
 {
 width: 100%;
 height: 500px;
-/*border-width: 0 0 2% 2%;*/
+border-width: 0 0 2px 2px;
 border-spacing: 0;
 border-style: solid;
 border-color: white;
@@ -19,7 +18,7 @@ border-color: white;
 .sub td
 {
 border-radius: 25%;
-border-width: 2% 2% 0 0;
+border-width: 2px 2px 0 0;
 border-style: solid;
 border-color: white;
 }
@@ -318,17 +317,18 @@ function show(data){
 </table>
   </div>
 <div>
-  <input type="text" id="h" />
-  <button onclick="setup(0)"> Team 1 </button>
-  <button onclick="setup(1)"> Team 2 </button>
+  <input type="text" id="h" style="display:block;width:98%;margin: auto"/>
+  <button onclick="setup(0)" style="width:49%"> Team 1 </button>
+  <button onclick="setup(1)" style="width:49%;right:0px"> Team 2 </button>
 </div>
 </div>
 
 <div class="side">
     <div id="side">
-            Your opponent sees a similar layout,<br>
-    3 tiles are green for both, 1 is black for both and each of you can see 1 black tile that is green for the other<br>
-    type in a random 
+    Type in a random word then press a button to generate a layout.
+    When the other team uses the same word, they will see a similar layout. <br>
+    3 tiles are green for both, 1 is black for both and each of you can see 1
+    black tile that is green for the other<br>
 
     </div>
 
