@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+<title>Codenames Duet - play</title>
+
+<link rel="stylesheet" type="text/css" href="styles.css">
+<style type="text/css">
+table.sub
+{
+width: 100%;
+height: 500px;
+/*border-width: 0 0 2% 2%;*/
+border-spacing: 0;
+border-style: solid;
+border-color: white;
+}
+.sub td
+{
+border-radius: 25%;
+border-width: 2% 2% 0 0;
+border-style: solid;
+border-color: white;
+}
+
+p.in-cell
+{
+text-align: center;
+margin: 0 0 0 0;
+}
+
+td.G
+{
+background-color: green;
+}
+td.W
+{
+background-color: lightsalmon;
+}
+td.B
+{
+background-color: black;
+}
+</style>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js"></script>
+<!--<script src="/staticfiles/jquery.min.js"></script>-->
+
+
+
+<script>
+var gameID='za38dw40q48l63gi';
+
+  var playerID='xbivf7b2nk37wfmg'
+  player=1//0 or 1
+lastm='{"state": 4, "gameID": "za38dw40q48l63gi", "request": "gameUpdate", "message": null, "board": "GGGBWWGWWWWGGGWWWGWWBBBGWBGGWGBWWWGWWGWGWWGWGWWWGW"}'
+lastj=JSON.parse(lastm)
+//$(function(){show(JSON.parse(lastm));});
+</script>
+
+<script>
+
+
+
+m_w = 100;    /* must not be zero */
+m_z = 200;    /* must not be zero */
+
+s=""
+
+function f (x) {y=x%4294967296;if (y>=2147483648){return y-4294967296} else {return y}}
+
+function get_random(i)
+{
+    m_z = f(f(36969 * (m_z & 65535)) + (m_z >> 16));
+    m_w = f(f(18000 * (m_w & 65535)) + (m_w >> 16));
+    s+="\n"+m_z+","+m_w;
+    x = f((m_z << 16) + m_w)%i
+    if (x<0)x+=i
+    return x;
+}
+
+
+//https://www.bennadel.com/blog/2600-implementing-java-s-collections-shuffle-in-javascript.htm
+
+    var collections = (function() {
+
+        function shuffle( collection, randRangeImplementation ) {
+            var length = collection.length;
+            var i = length;
+
+            // Loop backwards through the list, randomly swapping indices.
+            while( --i ) {
+                var j = randRangeImplementation( i+1 );
+                //console.log(i+","+j)
+                if ( i !== j ) {
+                    swap( collection, i, j );
+                }
+            }
+            return( collection );
+        }
+
+        // I swap the value at the given indices in the given collection.
+        function swap( collection, i, j ) {
+            var tempValue = collection[ i ];
+            collection[ i ] = collection[ j ];
+            collection[ j ] = tempValue;
+        }
+
+        // Return the public API.
+        return({
+            shuffle: shuffle
+        });
+    })();
+
+
+    // ------------------------------------------------------- //
+    // ------------------------------------------------------- //
+
+
+    /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  */
+    /* SHA-256 (FIPS 180-4) implementation in JavaScript                  (c) Chris Veness 2002-2017  */
+    /*                                                                                   MIT Licence  */
+    /* www.movable-type.co.uk/scripts/sha256.html                                                     */
+    /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  */
+
+
+    class Sha256 {
+
+        static hash(msg, options) {
+            const defaults = { msgFormat: 'string', outFormat: 'hex' };
+            const opt = Object.assign(defaults, options);
+
+            switch (opt.msgFormat) {
+                default:
+                case 'string':   msg = utf8Encode(msg);       break;
+                case 'hex-bytes':msg = hexBytesToString(msg); break;
+            }
+
+            const K = [
+                0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+                0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+                0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+                0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+                0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+                0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+                0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+                0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2 ];
+
+            const H = [
+                0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19 ];
+
+
+            msg += String.fromCharCode(0x80);  // add trailing '1' bit (+ 0's padding) to string [§5.1.1]
+
+            // convert string msg into 512-bit blocks (array of 16 32-bit integers) [§5.2.1]
+            const l = msg.length/4 + 2;
+            const N = Math.ceil(l/16);
+            const M = new Array(N);
+
+            for (let i=0; i<N; i++) {
+                M[i] = new Array(16);
+                for (let j=0; j<16; j++) { // encode 4 chars per integer (64 per block), big-endian encoding
+                    M[i][j] = (msg.charCodeAt(i*64+j*4+0)<<24) | (msg.charCodeAt(i*64+j*4+1)<<16)
+                            | (msg.charCodeAt(i*64+j*4+2)<< 8) | (msg.charCodeAt(i*64+j*4+3)<< 0);
+                } // note running off the end of msg is ok 'cos bitwise ops on NaN return 0
+            }
+            const lenHi = ((msg.length-1)*8) / Math.pow(2, 32);
+            const lenLo = ((msg.length-1)*8) >>> 0;
+            M[N-1][14] = Math.floor(lenHi);
+            M[N-1][15] = lenLo;
+
+
+            // HASH COMPUTATION [§6.2.2]
+
+            for (let i=0; i<N; i++) {
+                const W = new Array(64);
+
+                // 1 - prepare message schedule 'W'
+                for (let t=0;  t<16; t++) W[t] = M[i][t];
+                for (let t=16; t<64; t++) {
+                    W[t] = (Sha256.σ1(W[t-2]) + W[t-7] + Sha256.σ0(W[t-15]) + W[t-16]) >>> 0;
+                }
+
+                // 2 - initialise working variables a, b, c, d, e, f, g, h with previous hash value
+                let a = H[0], b = H[1], c = H[2], d = H[3], e = H[4], f = H[5], g = H[6], h = H[7];
+
+                // 3 - main loop (note '>>> 0' for 'addition modulo 2^32')
+                for (let t=0; t<64; t++) {
+                    const T1 = h + Sha256.Σ1(e) + Sha256.Ch(e, f, g) + K[t] + W[t];
+                    const T2 =     Sha256.Σ0(a) + Sha256.Maj(a, b, c);
+                    h = g;
+                    g = f;
+                    f = e;
+                    e = (d + T1) >>> 0;
+                    d = c;
+                    c = b;
+                    b = a;
+                    a = (T1 + T2) >>> 0;
+                }
+
+                // 4 - compute the new intermediate hash value (note '>>> 0' for 'addition modulo 2^32')
+                H[0] = (H[0]+a) >>> 0;
+                H[1] = (H[1]+b) >>> 0;
+                H[2] = (H[2]+c) >>> 0;
+                H[3] = (H[3]+d) >>> 0;
+                H[4] = (H[4]+e) >>> 0;
+                H[5] = (H[5]+f) >>> 0;
+                H[6] = (H[6]+g) >>> 0;
+                H[7] = (H[7]+h) >>> 0;
+            }
+
+            // convert H0..H7 to hex strings (with leading zeros)
+            for (let h=0; h<H.length; h++) H[h] = ('00000000'+H[h].toString(16)).slice(-8);
+
+            // concatenate H0..H7, with separator if required
+            const separator = opt.outFormat=='hex-w' ? ' ' : '';
+
+            return H.join(separator);
+
+            /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  */
+
+            function utf8Encode(str) {
+                try {
+                    return new TextEncoder().encode(str, 'utf-8').reduce((prev, curr) => prev + String.fromCharCode(curr), '');
+                } catch (e) { // no TextEncoder available?
+                    return unescape(encodeURIComponent(str)); // monsur.hossa.in/2012/07/20/utf-8-in-javascript.html
+                }
+            }
+
+            function hexBytesToString(hexStr) { // convert string of hex numbers to a string of chars (eg '616263' -> 'abc').
+                const str = hexStr.replace(' ', ''); // allow space-separated groups
+                return str=='' ? '' : str.match(/.{2}/g).map(byte => String.fromCharCode(parseInt(byte, 16))).join('');
+            }
+        }
+
+
+
+        /**
+         * Rotates right (circular right shift) value x by n positions [§3.2.4].
+         * @private
+         */
+        static ROTR(n, x) {
+            return (x >>> n) | (x << (32-n));
+        }
+
+
+        /**
+         * Logical functions [§4.1.2].
+         * @private
+         */
+        static Σ0(x) { return Sha256.ROTR(2,  x) ^ Sha256.ROTR(13, x) ^ Sha256.ROTR(22, x); }
+        static Σ1(x) { return Sha256.ROTR(6,  x) ^ Sha256.ROTR(11, x) ^ Sha256.ROTR(25, x); }
+        static σ0(x) { return Sha256.ROTR(7,  x) ^ Sha256.ROTR(18, x) ^ (x>>>3);  }
+        static σ1(x) { return Sha256.ROTR(17, x) ^ Sha256.ROTR(19, x) ^ (x>>>10); }
+        static Ch(x, y, z)  { return (x & y) ^ (~x & z); }          // 'choice'
+        static Maj(x, y, z) { return (x & y) ^ (x & z) ^ (y & z); } // 'majority'
+    }
+
+
+//The interface for a game
+function show(data){
+  for(y=0;y<5;y++){
+    for(x=0;x<5;x++){
+      var t = $("#t"+x+y)
+      t.removeClass("W")
+      t.removeClass("B")
+      t.removeClass("G")
+      t.addClass(data.board[y*10+x*2+player]);
+    }
+  }
+}
+</script>
+
+</head>
+
+<body>
+<div id="top" >Play Codenames Duet</div>
+
+<div id="main">
+<div id="game">
+<table class='sub'>
+  <tr>
+      <td id=t00><p id=p00 class=in-cell> </p></td>
+      <td id=t10><p id=p10 class=in-cell> </p></td>
+      <td id=t20><p id=p20 class=in-cell> </p></td>
+      <td id=t30><p id=p30 class=in-cell> </p></td>
+      <td id=t40><p id=p40 class=in-cell> </p></td>
+    </tr>
+  <tr>
+      <td id=t01><p id=p01 class=in-cell> </p></td>
+      <td id=t11><p id=p11 class=in-cell> </p></td>
+      <td id=t21><p id=p21 class=in-cell> </p></td>
+      <td id=t31><p id=p31 class=in-cell> </p></td>
+      <td id=t41><p id=p41 class=in-cell> </p></td>
+    </tr>
+  <tr>
+      <td id=t02><p id=p02 class=in-cell> </p></td>
+      <td id=t12><p id=p12 class=in-cell> </p></td>
+      <td id=t22><p id=p22 class=in-cell> </p></td>
+      <td id=t32><p id=p32 class=in-cell> </p></td>
+      <td id=t42><p id=p42 class=in-cell> </p></td>
+    </tr>
+  <tr>
+      <td id=t03><p id=p03 class=in-cell> </p></td>
+      <td id=t13><p id=p13 class=in-cell> </p></td>
+      <td id=t23><p id=p23 class=in-cell> </p></td>
+      <td id=t33><p id=p33 class=in-cell> </p></td>
+      <td id=t43><p id=p43 class=in-cell> </p></td>
+    </tr>
+  <tr>
+      <td id=t04><p id=p04 class=in-cell> </p></td>
+      <td id=t14><p id=p14 class=in-cell> </p></td>
+      <td id=t24><p id=p24 class=in-cell> </p></td>
+      <td id=t34><p id=p34 class=in-cell> </p></td>
+      <td id=t44><p id=p44 class=in-cell> </p></td>
+    </tr>
+</table>
+  </div>
+<div>
+  <input type="text" id="h" />
+  <button onclick="setup(0)"> Team 1 </button>
+  <button onclick="setup(1)"> Team 2 </button>
+</div>
+</div>
+
+<div class="side">
+    <div id="side">
+            Your opponent sees a similar layout,<br>
+    3 tiles are green for both, 1 is black for both and each of you can see 1 black tile that is green for the other<br>
+    type in a random 
+
+    </div>
+
+    <div id="links">
+        <a href="/" class="link">all games</a><br>
+    </div>
+</div>
+</div>
+
+<script>
+//var numbers = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24]
+
+//collections.shuffle( numbers,get_random );
+//console.log(numbers)
+
+var numbers = ["BG"].concat(
+    Array(5).fill("WG").concat(
+    Array(3).fill("GG").concat(
+    Array(5).fill("GW").concat(
+    ["GB","WB","BB"].concat(
+    Array(7).fill("WW").concat(["BW"])
+)))))
+
+collections.shuffle( numbers,get_random );
+show({board:numbers.join("")})
+
+function setup(n){
+    player=n
+   hash = Sha256.hash($("#h").val())
+   //console.log(hash)
+   m_w=eval("f(0x"+hash.substr(0,8)+")")
+   m_z=eval("f(0x"+hash.substr(8,8)+")")
+   //console.log(m_w,m_z)
+   var numbers = ["BG"].concat(
+       Array(5).fill("WG").concat(
+       Array(3).fill("GG").concat(
+       Array(5).fill("GW").concat(
+       ["GB","WB","BB"].concat(
+       Array(7).fill("WW").concat(["BW"])
+   )))))
+   //console.log(numbers.join(""))
+   collections.shuffle( numbers,get_random );
+   //console.log(numbers.join(""))
+   show({board:numbers.join("")})
+
+}
+
+</script>
+</body>
+</html>
